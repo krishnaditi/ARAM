@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── Node / Vite / ARAM web app ──
+node_modules/
+dist/
+dist-ssr/
+.env.local
+.env.*.local
+*.local
+.DS_Store
+dev-dist/
