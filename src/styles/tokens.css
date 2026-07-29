@@ -1,0 +1,34 @@
+/* ARAM design tokens — ported from the approved HTML prototype.
+   Brand gradient: purple #9B6EE0 -> pink #D4537E. */
+:root {
+  /* Brand */
+  --aram-purple: #9b6ee0;
+  --aram-pink: #d4537e;
+  --aram-grad: linear-gradient(135deg, #9b6ee0, #d4537e);
+
+  /* Text */
+  --ink: #1a1a18;
+  --ink-soft: #555;
+  --ink-mute: #888;
+  --ink-faint: #aaa;
+
+  /* Surfaces */
+  --surface: #fff;
+  --surface-soft: #f8f9ff;
+
+  /* Semantic */
+  --teal: #0a7a7a;
+  --green: #1d9e75;
+  --amber: #ef9f27;
+  --red: #e24b4a;
+  --blue: #378add;
+
+  /* Radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+
+  /* App shell */
+  --app-max: 440px;
+}

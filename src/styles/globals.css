@@ -1,0 +1,153 @@
+/* Reset + app shell. The screen styles live in screens.css (ported from prototype). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* 1rem = 10px at this baseline — every size in screens.css was converted from its
+     original px value to rem on this basis, so nothing changes yet at this size.
+     Bumping this at the breakpoints below scales ALL of them together: text, icons,
+     card padding, gaps — the whole design gets proportionally bigger on a big screen
+     instead of just the outer container getting wider around unchanged small text. */
+  font-size: 62.5%;
+}
+
+/* Laptop — the design is scaled up ~20% so it reads as built for the screen size,
+   not a phone view stretched into a wider box. Same layout, same proportions. */
+@media (min-width: 1024px) {
+  html {
+    font-size: 75%;
+  }
+}
+
+/* Very large monitors — a touch more still. */
+@media (min-width: 1440px) {
+  html {
+    font-size: 81.25%;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden; /* the app frame owns scrolling via .app-body; the page itself never scrolls */
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0d0d0b;
+  color: var(--ink);
+  font-size: 1.6rem; /* sane default (16px at baseline) for any text without its own class */
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none; /* stop iOS/Android rubber-banding the whole page */
+}
+
+button {
+  font-family: inherit;
+}
+
+/* App shell — always fills the full viewport height; only the content column's
+   WIDTH adapts to the device (phone/tablet/laptop). No "phone mockup" card,
+   no shrinking into a small box on larger screens — the app fills the screen. */
+.app-shell {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #fff;
+}
+
+.app-screen {
+  width: 100%;
+  max-width: var(--app-max);
+  /* A fixed (not min-) height is required: it gives .app-body a definite box to size
+     against, so overflow scrolls INSIDE the frame instead of growing the whole page
+     taller than the viewport (which would push the footer/CTA button off-screen). */
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Tablet and up — scale width with the viewport (fills almost the whole window)
+   instead of jumping to one fixed column, so laptops of every size actually look
+   filled rather than leaving big untouched margins. Capped only so it doesn't
+   stretch into an unreadable full-bleed column on ultra-wide monitors. */
+@media (min-width: 700px) {
+  .app-screen {
+    max-width: min(100vw, 1440px);
+  }
+
+  /* Linear single-column screens (nickname/DOB/PIN, consent, camera/voice toggles,
+     PIN login, etc.) stay at a comfortable reading width — stretching a single form
+     field or a paragraph of consent text edge-to-edge across a laptop looks broken,
+     not "designed". Dashboard-style screens (.content-col: home + welcome) are
+     deliberately NOT capped here — they get their own multi-column reflow below so
+     they genuinely use the full width instead of just sitting in a wider blank box.
+     Widths are in rem, not px, so this column widens in the same proportion as the
+     text/cards inside it when the laptop breakpoints above scale the root font-size. */
+  .sc,
+  .sc-sm,
+  .app-footer > * {
+    max-width: 64rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.app-progress {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+.app-progress-fill {
+  height: 100%;
+  background: var(--aram-grad);
+  transition: width 0.4s ease;
+}
+
+.app-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-footer {
+  background: rgba(255, 255, 255, 0.97);
+  padding: 1.2rem 1.8rem calc(1.6rem + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* Accessible focus ring for keyboard users. */
+:focus-visible {
+  outline: 3px solid rgba(155, 110, 224, 0.5);
+  outline-offset: 2px;
+}
+
+/* Respect reduced-motion preference: disable the decorative loops. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
