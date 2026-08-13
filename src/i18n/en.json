@@ -54,12 +54,14 @@
     "english": "English",
     "tamil": "Tamil",
     "schoolCode": "School code (EMIS)",
+    "schoolCodeSpoken": "Then enter your school code.",
     "schoolCodePlaceholder": "Enter your school code",
     "emisNote": "Your school code only helps me set your school space. I do not ask for your full name."
   },
   "s03": {
     "title": "What shall I call you?",
     "subtitle": "You can use a nickname or any name you like.",
+    "fieldsSpoken": "Please enter your nickname, your date of birth, and create a four-digit PIN.",
     "nickname": "Nickname",
     "nicknamePlaceholder": "Enter your nickname",
     "dob": "Date of birth",
@@ -91,6 +93,7 @@
   },
   "s05": {
     "title": "Can I support you from here, {{name}}?",
+    "titleSpoken": "Can I support you from here?",
     "canTitle": "I can:",
     "can1": "Help you notice and calm difficult feelings",
     "can2": "Suggest small steps that may make things lighter",
@@ -130,6 +133,7 @@
   },
   "s08": {
     "title": "You're all set, {{name}}!",
+    "titleSpoken": "You're all set!",
     "parentConsent": "Parent consent",
     "yourAgreement": "Your agreement",
     "cameraAccess": "Camera access",
@@ -206,6 +210,11 @@
   "voice": {
     "speak": "Tap to speak",
     "listening": "Listening…",
-    "unsupported": "Voice input isn't available on this device."
+    "unsupported": "Voice input isn't available on this device.",
+    "playAloud": "Listen to this",
+    "stopPlaying": "Stop",
+    "mute": "Turn voice off",
+    "unmute": "Turn voice on",
+    "headphonesHint": "Tip: use headphones if you'd like to keep this private."
   }
 }
