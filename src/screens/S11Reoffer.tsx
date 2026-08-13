@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
+import SpeakButton from '../components/SpeakButton'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
 import { api } from '../lib/api'
@@ -54,6 +55,9 @@ export default function S11Reoffer() {
             {t('s11.title')} 💜
           </div>
           <div className="warm-card sc-anim-3">{t('s11.warm')}</div>
+
+          {/* Tap-only for the same reason as Emergency — see SpeakButton. */}
+          <SpeakButton />
 
           <button
             className={`sc-option sc-anim-4${choice === 'yes' ? ' selected' : ''}`}

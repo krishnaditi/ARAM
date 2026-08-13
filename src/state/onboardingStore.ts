@@ -38,6 +38,14 @@ interface OnboardingState {
   voiceOptIn: boolean
   childId: string | null
 
+  /** Whether ARAM reads its own words aloud. Separate from `voiceOptIn`, which is about
+   * listening to the child; a child may well want to be heard but not spoken to, or be
+   * sitting in a classroom where sound isn't private. Persisted like `language`, because
+   * it is an accessibility preference rather than account state. */
+  speechOn: boolean
+  /** The "use headphones" tip is shown once per device, not on every screen. */
+  speechHintSeen: boolean
+
   // Transient secrets — held in memory only, never persisted
   dob: DobParts
   pin: string
@@ -58,6 +66,8 @@ interface OnboardingState {
   setChildAssent: (v: boolean) => void
   setCameraOptIn: (v: boolean) => void
   setVoiceOptIn: (v: boolean) => void
+  setSpeechOn: (v: boolean) => void
+  markSpeechHintSeen: () => void
   commitChild: (childId: string, ageGroup: string) => void
   clearSecrets: () => void
   unlock: () => void
@@ -80,6 +90,11 @@ export const useOnboarding = create<OnboardingState>()(
       voiceOptIn: false,
       childId: null,
 
+      // On by default: being read to is the point for a child who reads slowly, or at all.
+      // One tap in the header turns it off and the choice sticks.
+      speechOn: true,
+      speechHintSeen: false,
+
       dob: { ...emptyDob },
       pin: '',
       pinConfirm: '',
@@ -98,6 +113,8 @@ export const useOnboarding = create<OnboardingState>()(
       setChildAssent: (childAssent) => set({ childAssent }),
       setCameraOptIn: (cameraOptIn) => set({ cameraOptIn }),
       setVoiceOptIn: (voiceOptIn) => set({ voiceOptIn }),
+      setSpeechOn: (speechOn) => set({ speechOn }),
+      markSpeechHintSeen: () => set({ speechHintSeen: true }),
       commitChild: (childId, ageGroup) =>
         set({ childId, ageGroup, dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
       clearSecrets: () => set({ dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
@@ -132,6 +149,10 @@ export const useOnboarding = create<OnboardingState>()(
         cameraOptIn: s.cameraOptIn,
         voiceOptIn: s.voiceOptIn,
         childId: s.childId,
+        // Device preferences, kept across resets alongside `language` for the same reason:
+        // wiping the account shouldn't silently take a child's voice setting away.
+        speechOn: s.speechOn,
+        speechHintSeen: s.speechHintSeen,
       }),
     },
   ),

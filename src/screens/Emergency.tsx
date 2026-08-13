@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
+import SpeakButton from '../components/SpeakButton'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
 
@@ -54,6 +55,10 @@ export default function Emergency() {
               {t('emergency.subtitle')}
             </div>
           </div>
+
+          {/* Never auto-played: this copy says "hurting yourself" out loud, and the child
+              may be sitting in a classroom. Reading it aloud is their call. */}
+          <SpeakButton />
 
           {HELPLINES.map((h) => (
             <a

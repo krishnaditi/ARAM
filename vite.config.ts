@@ -29,7 +29,10 @@ export default defineConfig({
       workbox: {
         // App shell only. Never cache API/auth responses (PII must not be persisted on device).
         navigateFallbackDenylist: [/^\/api/, /supabase/],
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // mp3 covers ARAM's voice clips. They must precache with the shell: the Emergency
+        // screen is exactly the one a child may open on a dead connection, and it is the
+        // one that most needs to be able to read itself aloud.
+        globPatterns: ['**/*.{js,css,html,svg,woff2,mp3}'],
       },
     }),
   ],
