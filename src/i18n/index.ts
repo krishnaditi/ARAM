@@ -3,7 +3,12 @@ import { initReactI18next } from 'react-i18next'
 import en from './en.json'
 import ta from './ta.json'
 
-export type Language = 'en' | 'ta'
+export type Language = 'en' | 'hi' | 'ta' | 'te' | 'ml'
+
+// Only English and Tamil have translated copy today. Hindi/Telugu/Malayalam are selectable
+// on S02 so the language step reflects the real student population, but i18next's
+// fallbackLng below renders them in English until those translation files are added —
+// never a crash, never blank text.
 
 const STORAGE_KEY = 'aram.lang'
 
@@ -27,8 +32,11 @@ function writeStoredLanguage(lang: Language): void {
   }
 }
 
+const ALL_LANGUAGES: Language[] = ['en', 'hi', 'ta', 'te', 'ml']
+
 function initialLanguage(): Language {
-  return readStoredLanguage() === 'ta' ? 'ta' : 'en'
+  const stored = readStoredLanguage()
+  return (ALL_LANGUAGES as string[]).includes(stored ?? '') ? (stored as Language) : 'en'
 }
 
 void i18n.use(initReactI18next).init({

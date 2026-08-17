@@ -53,11 +53,28 @@
     "intro2": "Let's set it up.",
     "chooseLanguage": "Choose your language",
     "english": "English",
+    "hindi": "Hindi",
     "tamil": "Tamil",
+    "telugu": "Telugu",
+    "malayalam": "Malayalam",
     "schoolCode": "School code (EMIS)",
     "schoolCodeSpoken": "Then enter your school code.",
     "schoolCodePlaceholder": "Enter your school code",
     "emisNote": "Your school code only helps me set your school space. I do not ask for your full name."
+  },
+  "s02b": {
+    "title": "Is your school a Tamil Nadu Government school?",
+    "subtitle": "This helps me find your school details automatically.",
+    "yes": "Yes",
+    "yesSub": "I'll look up your school using its EMIS code",
+    "no": "No",
+    "noSub": "Skip ahead — I'll set up your space another way"
+  },
+  "s02c": {
+    "school": "School name",
+    "district": "District",
+    "studentName": "Student name",
+    "notFound": "I couldn't find that school code. Please check it and try again."
   },
   "s03": {
     "title": "What shall I call you?",

@@ -23,6 +23,13 @@ export interface ISpeech {
   cancelSpeech(): void
 }
 
-export function langTag(language: 'en' | 'ta'): string {
-  return language === 'ta' ? 'ta-IN' : 'en-IN'
+export function langTag(language: 'en' | 'hi' | 'ta' | 'te' | 'ml'): string {
+  const tags: Record<'en' | 'hi' | 'ta' | 'te' | 'ml', string> = {
+    en: 'en-IN',
+    hi: 'hi-IN',
+    ta: 'ta-IN',
+    te: 'te-IN',
+    ml: 'ml-IN',
+  }
+  return tags[language]
 }

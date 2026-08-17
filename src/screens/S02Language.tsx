@@ -3,25 +3,28 @@ import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import { ROUTES, progressFor } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
+import type { Language } from '../i18n'
+
+const LANGUAGE_OPTIONS: { code: Language; labelKey: string }[] = [
+  { code: 'en', labelKey: 's02.english' },
+  { code: 'hi', labelKey: 's02.hindi' },
+  { code: 'ta', labelKey: 's02.tamil' },
+  { code: 'te', labelKey: 's02.telugu' },
+  { code: 'ml', labelKey: 's02.malayalam' },
+]
 
 export default function S02Language() {
   const nav = useNavigate()
   const { t } = useTranslation()
   const language = useOnboarding((s) => s.language)
   const setLanguage = useOnboarding((s) => s.setLanguage)
-  const emis = useOnboarding((s) => s.emis)
-  const setEmis = useOnboarding((s) => s.setEmis)
 
   const footer = (
     <div className="btn-row">
       <button className="btn btn-back" onClick={() => nav(ROUTES.welcome)}>
         ← {t('common.back')}
       </button>
-      <button
-        className="btn btn-next"
-        disabled={emis.trim().length === 0}
-        onClick={() => nav(ROUTES.profile)}
-      >
+      <button className="btn btn-next" onClick={() => nav(ROUTES.schoolType)}>
         {t('common.continue')} →
       </button>
     </div>
@@ -48,32 +51,15 @@ export default function S02Language() {
           <div className="sc-anim-3">
             <div className="field-label">{t('s02.chooseLanguage')}</div>
             <div className="lang-row">
-              <button
-                className={`lang-pill ${language === 'en' ? 'active' : 'inactive'}`}
-                onClick={() => setLanguage('en')}
-              >
-                {t('s02.english')}
-              </button>
-              <button
-                className={`lang-pill ${language === 'ta' ? 'active' : 'inactive'}`}
-                onClick={() => setLanguage('ta')}
-              >
-                {t('s02.tamil')}
-              </button>
-            </div>
-          </div>
-
-          <div className="sc-anim-4">
-            <div className="field-label">🏫 {t('s02.schoolCode')}</div>
-            <input
-              className="sc-input"
-              placeholder={t('s02.schoolCodePlaceholder')}
-              value={emis}
-              inputMode="numeric"
-              onChange={(e) => setEmis(e.target.value)}
-            />
-            <div className="emis-note" style={{ marginTop: '0.6rem' }}>
-              🔒 {t('s02.emisNote')}
+              {LANGUAGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.code}
+                  className={`lang-pill ${language === opt.code ? 'active' : 'inactive'}`}
+                  onClick={() => setLanguage(opt.code)}
+                >
+                  {t(opt.labelKey)}
+                </button>
+              ))}
             </div>
           </div>
         </div>

@@ -29,7 +29,13 @@ export function deriveAgeGroup(dob: DobParts, now: Date = new Date()): string | 
 interface OnboardingState {
   // Persisted (non-sensitive) resume data
   language: Language
+  /** null = not yet answered on S02b. */
+  isTNGovtSchool: boolean | null
   emis: string
+  /** Auto-filled from the (currently hardcoded) EMIS lookup on S02c. */
+  schoolName: string
+  district: string
+  studentFullName: string
   nickname: string
   ageGroup: string | null
   parentConsent: boolean
@@ -57,7 +63,9 @@ interface OnboardingState {
 
   // Actions
   setLanguage: (lang: Language) => void
+  setIsTNGovtSchool: (v: boolean) => void
   setEmis: (emis: string) => void
+  setSchoolLookup: (v: { schoolName: string; district: string; studentFullName: string }) => void
   setNickname: (nickname: string) => void
   setDob: (dob: Partial<DobParts>) => void
   setPin: (pin: string) => void
@@ -81,7 +89,11 @@ export const useOnboarding = create<OnboardingState>()(
   persist(
     (set) => ({
       language: 'en',
+      isTNGovtSchool: null,
       emis: '',
+      schoolName: '',
+      district: '',
+      studentFullName: '',
       nickname: '',
       ageGroup: null,
       parentConsent: false,
@@ -104,7 +116,10 @@ export const useOnboarding = create<OnboardingState>()(
         applyLanguage(language)
         set({ language })
       },
+      setIsTNGovtSchool: (isTNGovtSchool) => set({ isTNGovtSchool }),
       setEmis: (emis) => set({ emis }),
+      setSchoolLookup: ({ schoolName, district, studentFullName }) =>
+        set({ schoolName, district, studentFullName }),
       setNickname: (nickname) => set({ nickname }),
       setDob: (dob) => set((s) => ({ dob: { ...s.dob, ...dob } })),
       setPin: (pin) => set({ pin }),
@@ -122,7 +137,11 @@ export const useOnboarding = create<OnboardingState>()(
       logout: () => set({ unlocked: false }),
       reset: () =>
         set({
+          isTNGovtSchool: null,
           emis: '',
+          schoolName: '',
+          district: '',
+          studentFullName: '',
           nickname: '',
           ageGroup: null,
           parentConsent: false,
@@ -141,7 +160,11 @@ export const useOnboarding = create<OnboardingState>()(
       // Persist only non-sensitive resume data. Secrets (dob, pin) are excluded by design.
       partialize: (s) => ({
         language: s.language,
+        isTNGovtSchool: s.isTNGovtSchool,
         emis: s.emis,
+        schoolName: s.schoolName,
+        district: s.district,
+        studentFullName: s.studentFullName,
         nickname: s.nickname,
         ageGroup: s.ageGroup,
         parentConsent: s.parentConsent,

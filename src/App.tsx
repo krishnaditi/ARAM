@@ -5,6 +5,8 @@ import { useOnboarding } from './state/onboardingStore'
 
 import S01Welcome from './screens/S01Welcome'
 import S02Language from './screens/S02Language'
+import S02bSchoolType from './screens/S02bSchoolType'
+import S02cEmis from './screens/S02cEmis'
 import S03Profile from './screens/S03Profile'
 import S04ParentConsent from './screens/S04ParentConsent'
 import S05Assent from './screens/S05Assent'
@@ -51,6 +53,8 @@ export default function App() {
         <Route path="/" element={<RootRedirect />} />
         <Route path={ROUTES.welcome} element={<S01Welcome />} />
         <Route path={ROUTES.language} element={<S02Language />} />
+        <Route path={ROUTES.schoolType} element={<S02bSchoolType />} />
+        <Route path={ROUTES.emis} element={<S02cEmis />} />
         <Route path={ROUTES.profile} element={<S03Profile />} />
         <Route path={ROUTES.parentConsent} element={<S04ParentConsent />} />
         <Route path={ROUTES.assent} element={<S05Assent />} />

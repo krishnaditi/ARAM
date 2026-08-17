@@ -13,6 +13,9 @@ export default function S03Profile() {
   const s = useOnboarding()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // S03 is reached either straight from the EMIS lookup (TN govt school) or straight
+  // from the schoolType "No" branch — back should return to wherever they actually came from.
+  const backRoute = s.isTNGovtSchool ? ROUTES.emis : ROUTES.schoolType
 
   const onNext = async () => {
     setError(null)
@@ -49,7 +52,7 @@ export default function S03Profile() {
         </div>
       )}
       <div className="btn-row">
-        <button className="btn btn-back" onClick={() => nav(ROUTES.language)}>
+        <button className="btn btn-back" onClick={() => nav(backRoute)}>
           ← {t('common.back')}
         </button>
         <button className="btn btn-next" onClick={onNext} disabled={busy}>

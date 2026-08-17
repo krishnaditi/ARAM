@@ -1,7 +1,9 @@
 /** Onboarding + home route map. Screen IDs map to the approved prototype (S01–S11). */
 export const ROUTES = {
   welcome: '/welcome', // S01 new-user home
-  language: '/language', // S02 language + EMIS
+  language: '/language', // S02 language select
+  schoolType: '/school-type', // S02b TN government school? yes/no
+  emis: '/emis', // S02c EMIS code + auto-filled school details (TN govt schools only)
   profile: '/profile', // S03 nickname + DOB + PIN
   parentConsent: '/parent-consent', // S04
   assent: '/assent', // S05 child assent
@@ -14,10 +16,13 @@ export const ROUTES = {
   emergency: '/emergency', // always-available helpline
 } as const
 
-/** Linear new-user step order, used to compute progress and next/back. */
+/** Linear new-user step order, used to compute progress and next/back. The EMIS step is
+ * skipped for non-TN-government schools, so progress simply jumps two steps at once there. */
 export const NEW_USER_STEPS: string[] = [
   ROUTES.welcome,
   ROUTES.language,
+  ROUTES.schoolType,
+  ROUTES.emis,
   ROUTES.profile,
   ROUTES.parentConsent,
   ROUTES.assent,

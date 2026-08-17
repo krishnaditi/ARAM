@@ -85,8 +85,8 @@ const ALL_LINES: Record<string, SpokenLine[]> = {
     { key: 's02.intro1', trigger: 'auto', tier: 'C' },
     { key: 's02.intro2', trigger: 'auto', tier: 'C' },
     { key: 's02.chooseLanguage', trigger: 'auto', tier: 'C' },
-    { key: 's02.schoolCodeSpoken', trigger: 'auto', tier: 'C' },
   ],
+  [ROUTES.emis]: [{ key: 's02.schoolCodeSpoken', trigger: 'auto', tier: 'C' }],
   [ROUTES.profile]: [
     { key: 's03.title', trigger: 'auto', tier: 'C' },
     { key: 's03.subtitle', trigger: 'auto', tier: 'C' },
