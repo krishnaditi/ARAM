@@ -13,11 +13,10 @@ interface Helpline {
 }
 
 // India-wide helplines. Update per district/state as the deployment requires.
+// KIRAN and the 112 emergency-services line are deliberately left out for now.
 const HELPLINES: Helpline[] = [
   { nameKey: 'emergency.teleManasName', subKey: 'emergency.teleManasSub', number: '14416', icon: '💚' },
-  { nameKey: 'emergency.kiranName', subKey: 'emergency.kiranSub', number: '18005990019', icon: '📞' },
   { nameKey: 'emergency.childlineName', subKey: 'emergency.childlineSub', number: '1098', icon: '🧒' },
-  { nameKey: 'emergency.emergencyName', subKey: 'emergency.emergencySub', number: '112', icon: '🚨' },
 ]
 
 export default function Emergency() {
