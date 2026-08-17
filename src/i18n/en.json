@@ -16,7 +16,8 @@
     "friend": "Friend",
     "home": "Home",
     "logout": "Logout",
-    "logoutConfirm": "Lock your space? You'll need your PIN to come back in."
+    "logoutConfirm": "Lock your space? You'll need your PIN to come back in.",
+    "startOverConfirm": "Leave setup and start over? What you've entered so far won't be saved."
   },
   "s01": {
     "greetingLine": "{{greeting}}, {{name}}!",

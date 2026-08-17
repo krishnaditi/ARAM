@@ -19,7 +19,7 @@ export default function S01Welcome() {
   )
 
   return (
-    <Screen progress={progressFor(ROUTES.welcome)} footer={footer}>
+    <Screen progress={progressFor(ROUTES.welcome)} footer={footer} hideLogout>
       <div className="bg-home">
        <div className="content-col">
         <div

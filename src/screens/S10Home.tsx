@@ -63,8 +63,17 @@ export default function S10Home() {
   ]
 
   return (
-    <Screen>
+    <Screen hideLogout>
       <div className="bg-home">
+        <button
+          type="button"
+          className="back-icon-btn"
+          onClick={() => nav(-1)}
+          aria-label={t('common.back')}
+          title={t('common.back')}
+        >
+          ←
+        </button>
         <div className="content-col">
         <div className="ret-header sc-anim-1">
           <div className="ret-avatar">{avatarInitial}</div>

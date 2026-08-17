@@ -36,6 +36,15 @@ export default function S11Reoffer() {
   return (
     <Screen footer={footer}>
       <div className="bg-soft">
+        <button
+          type="button"
+          className="back-icon-btn"
+          onClick={() => nav(-1)}
+          aria-label={t('common.back')}
+          title={t('common.back')}
+        >
+          ←
+        </button>
         <div className="sc">
           <div className="aram-logo-wrap sc-anim-1" style={{ marginBottom: 0 }}>
             <div className="aram-logo-circle sc-float" style={{ fontSize: '2.6rem' }}>
