@@ -42,6 +42,8 @@ interface OnboardingState {
   childAssent: boolean
   cameraOptIn: boolean
   voiceOptIn: boolean
+  /** Set on S05b once a face is captured. Lets S09 offer face login alongside the PIN. */
+  faceRegistered: boolean
   childId: string | null
 
   /** Whether ARAM reads its own words aloud. Separate from `voiceOptIn`, which is about
@@ -74,6 +76,7 @@ interface OnboardingState {
   setChildAssent: (v: boolean) => void
   setCameraOptIn: (v: boolean) => void
   setVoiceOptIn: (v: boolean) => void
+  setFaceRegistered: (v: boolean) => void
   setSpeechOn: (v: boolean) => void
   markSpeechHintSeen: () => void
   commitChild: (childId: string, ageGroup: string) => void
@@ -100,6 +103,7 @@ export const useOnboarding = create<OnboardingState>()(
       childAssent: false,
       cameraOptIn: false,
       voiceOptIn: false,
+      faceRegistered: false,
       childId: null,
 
       // On by default: being read to is the point for a child who reads slowly, or at all.
@@ -128,6 +132,7 @@ export const useOnboarding = create<OnboardingState>()(
       setChildAssent: (childAssent) => set({ childAssent }),
       setCameraOptIn: (cameraOptIn) => set({ cameraOptIn }),
       setVoiceOptIn: (voiceOptIn) => set({ voiceOptIn }),
+      setFaceRegistered: (faceRegistered) => set({ faceRegistered }),
       setSpeechOn: (speechOn) => set({ speechOn }),
       markSpeechHintSeen: () => set({ speechHintSeen: true }),
       commitChild: (childId, ageGroup) =>
@@ -148,6 +153,7 @@ export const useOnboarding = create<OnboardingState>()(
           childAssent: false,
           cameraOptIn: false,
           voiceOptIn: false,
+          faceRegistered: false,
           childId: null,
           dob: { ...emptyDob },
           pin: '',
@@ -171,6 +177,7 @@ export const useOnboarding = create<OnboardingState>()(
         childAssent: s.childAssent,
         cameraOptIn: s.cameraOptIn,
         voiceOptIn: s.voiceOptIn,
+        faceRegistered: s.faceRegistered,
         childId: s.childId,
         // Device preferences, kept across resets alongside `language` for the same reason:
         // wiping the account shouldn't silently take a child's voice setting away.

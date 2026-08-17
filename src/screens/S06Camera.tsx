@@ -13,7 +13,7 @@ export default function S06Camera() {
 
   const footer = (
     <div className="btn-row">
-      <button className="btn btn-back" onClick={() => nav(ROUTES.assent)}>
+      <button className="btn btn-back" onClick={() => nav(ROUTES.faceRegister)}>
         ← {t('common.back')}
       </button>
       <button className="btn btn-next" onClick={() => nav(ROUTES.voice)}>

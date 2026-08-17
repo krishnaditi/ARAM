@@ -127,6 +127,19 @@
     "privacyNote": "Your privacy matters. You can stop anytime.",
     "notNowMessage": "Thank you for considering ARAM. You can return anytime."
   },
+  "s05b": {
+    "title": "Let's register your face",
+    "subtitle": "So you can log back in with a PIN or your face",
+    "whyTitle": "Why we ask",
+    "why1": "A quick way back into your space, alongside your PIN",
+    "why2": "We never share your face data outside your account",
+    "why3": "You can always use your PIN instead",
+    "captureCta": "Register my face",
+    "captureCtaSub": "Tap and hold still for a moment",
+    "scanning": "Scanning…",
+    "registered": "Face registered! You can use it to log in next time.",
+    "note": "This step is part of setting up your space. If it doesn't work on this device, your PIN always works."
+  },
   "s06": {
     "title": "Can we use your camera?",
     "subtitle": "This is completely optional",
@@ -169,6 +182,8 @@
     "enterPin": "Enter your PIN",
     "note": "Your PIN keeps your space private. Forgot your PIN? Contact your school coordinator.",
     "unlock": "Unlock",
+    "faceLogin": "Log in with face",
+    "faceScanning": "Scanning…",
     "errWrong": "That PIN wasn't right. {{remaining}} tries left.",
     "lockedTitle": "Too many attempts",
     "lockedSub": "For your safety this space is locked. Please contact your school coordinator to unlock it."

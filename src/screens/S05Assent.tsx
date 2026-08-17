@@ -12,7 +12,7 @@ export default function S05Assent() {
 
   const onYes = () => {
     setChildAssent(true)
-    nav(ROUTES.camera)
+    nav(ROUTES.faceRegister)
   }
 
   const onNotNow = () => {

@@ -7,6 +7,7 @@ export const ROUTES = {
   profile: '/profile', // S03 nickname + DOB + PIN
   parentConsent: '/parent-consent', // S04
   assent: '/assent', // S05 child assent
+  faceRegister: '/face-register', // S05b face registration (usable at login alongside the PIN)
   camera: '/camera', // S06
   voice: '/voice', // S07
   summary: '/summary', // S08 consent summary
@@ -26,6 +27,7 @@ export const NEW_USER_STEPS: string[] = [
   ROUTES.profile,
   ROUTES.parentConsent,
   ROUTES.assent,
+  ROUTES.faceRegister,
   ROUTES.camera,
   ROUTES.voice,
   ROUTES.summary,

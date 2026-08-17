@@ -10,6 +10,7 @@ import S02cEmis from './screens/S02cEmis'
 import S03Profile from './screens/S03Profile'
 import S04ParentConsent from './screens/S04ParentConsent'
 import S05Assent from './screens/S05Assent'
+import S05bFaceRegister from './screens/S05bFaceRegister'
 import S06Camera from './screens/S06Camera'
 import S07Voice from './screens/S07Voice'
 import S08Summary from './screens/S08Summary'
@@ -58,6 +59,7 @@ export default function App() {
         <Route path={ROUTES.profile} element={<S03Profile />} />
         <Route path={ROUTES.parentConsent} element={<S04ParentConsent />} />
         <Route path={ROUTES.assent} element={<S05Assent />} />
+        <Route path={ROUTES.faceRegister} element={<S05bFaceRegister />} />
         <Route path={ROUTES.camera} element={<S06Camera />} />
         <Route path={ROUTES.voice} element={<S07Voice />} />
         <Route
