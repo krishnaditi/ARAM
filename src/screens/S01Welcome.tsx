@@ -1,14 +1,25 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import { ROUTES, progressFor } from '../flow'
 import { useGreeting } from '../lib/useGreeting'
+import { useOnboarding } from '../state/onboardingStore'
 
 export default function S01Welcome() {
   const nav = useNavigate()
   const { t } = useTranslation()
   const g = useGreeting()
   const name = t('common.friend')
+  const setLanguage = useOnboarding((s) => s.setLanguage)
+
+  // The landing page always starts in English, regardless of a language chosen (and possibly
+  // abandoned mid-onboarding) in an earlier visit — `language` persists independently in
+  // localStorage, so without this a returning-to-S01 device could open straight into Tamil/
+  // Hindi/etc. S02 is where the student actually makes their language choice for real.
+  useEffect(() => {
+    setLanguage('en')
+  }, [setLanguage])
 
   const footer = (
     <div className="btn-row">
