@@ -1,98 +1,73 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import { ROUTES, progressFor } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
+import { useCamera } from '../lib/useCamera'
+import { getFaceDescriptor, loadFaceModels } from '../lib/faceApi'
+import { api } from '../lib/api'
 
-type Stage = 'idle' | 'connecting' | 'streaming' | 'captured' | 'error'
+type ResultStage = 'none' | 'detecting' | 'captured' | 'noFace'
 
 /**
  * Registers a face using the device's real camera. There is still no face-match backend
- * (same "hardcode for now" approach as the EMIS lookup on S02c) — a captured frame just
- * flips `faceRegistered` on, the way a real capture + template store would after matching.
- * The photo itself is kept in memory only for the on-screen preview and is never persisted
- * or uploaded, same spirit as DOB/PIN in the onboarding store.
+ * (same "hardcode for now" approach as the EMIS lookup on S02c) — face detection and the
+ * 128-d descriptor comparison both run on-device (see lib/faceApi.ts); only the descriptor
+ * is handed to api.registerFace, never the photo, the way a real capture + template store
+ * would after matching. The photo itself is kept in memory only for the on-screen preview
+ * and is never persisted or uploaded, same spirit as DOB/PIN in the onboarding store.
  */
 export default function S05bFaceRegister() {
   const nav = useNavigate()
   const { t } = useTranslation()
+  const childId = useOnboarding((s) => s.childId)
   const faceRegistered = useOnboarding((s) => s.faceRegistered)
   const setFaceRegistered = useOnboarding((s) => s.setFaceRegistered)
-  const [stage, setStage] = useState<Stage>(faceRegistered ? 'captured' : 'idle')
-  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
+  const cam = useCamera()
+  const [result, setResult] = useState<ResultStage>(faceRegistered ? 'captured' : 'none')
   const [photo, setPhoto] = useState<string | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Attaching the stream to the <video> lives in its own effect, decoupled from the state
-  // update that requests it — the element only mounts once render picks up 'connecting'/
-  // 'streaming', so assigning srcObject inline right after getUserMedia() resolves would
-  // race against that mount and silently attach to a still-null ref.
+  // Warms up the (~7MB) recognition model in the background as soon as this screen opens,
+  // so the wait lands during camera setup instead of after the child taps Capture.
   useEffect(() => {
-    const video = videoRef.current
-    if (video && mediaStream) {
-      video.srcObject = mediaStream
-      void video.play()
-    }
-  }, [mediaStream])
+    void loadFaceModels()
+  }, [])
 
-  // Stops the camera whenever the stream changes away (capture, retake) or this screen
-  // unmounts (back, continue, or navigating off entirely) — the light must never stay on.
-  useEffect(() => {
-    return () => {
-      mediaStream?.getTracks().forEach((track) => track.stop())
+  const handleCapture = async () => {
+    const canvas = cam.captureCanvas()
+    if (!canvas) return
+    setResult('detecting')
+    const descriptor = await getFaceDescriptor(canvas)
+    cam.stop()
+    if (!descriptor || !childId) {
+      setResult('noFace')
+      return
     }
-  }, [mediaStream])
-
-  const startCamera = async () => {
-    setStage('connecting')
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false,
-      })
-      setMediaStream(stream)
-    } catch {
-      setStage('error')
-    }
-  }
-
-  const capture = () => {
-    const video = videoRef.current
-    if (!video || !video.videoWidth) return
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      // Mirror the capture to match the mirrored live preview the child was looking at.
-      ctx.translate(canvas.width, 0)
-      ctx.scale(-1, 1)
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      setPhoto(canvas.toDataURL('image/jpeg', 0.85))
-    }
-    setMediaStream(null)
-    setStage('captured')
+    await api.registerFace(childId, Array.from(descriptor))
+    setPhoto(canvas.toDataURL('image/jpeg', 0.85))
     setFaceRegistered(true)
+    setResult('captured')
   }
 
-  const retake = () => {
+  const retry = () => {
     setPhoto(null)
+    setResult('none')
     setFaceRegistered(false)
-    void startCamera()
+    void cam.start()
   }
 
   const goNext = () => {
-    setMediaStream(null)
+    cam.stop()
     nav(ROUTES.camera)
   }
   const goBack = () => {
-    setMediaStream(null)
+    cam.stop()
     nav(ROUTES.assent)
   }
 
-  const canContinue = stage === 'captured' || stage === 'error'
-  const showCamera = stage === 'connecting' || stage === 'streaming'
+  const canContinue = result === 'captured' || cam.stage === 'error'
+  const showCamera = result === 'none' && (cam.stage === 'connecting' || cam.stage === 'streaming')
 
   const footer = (
     <div className="btn-row">
@@ -109,13 +84,13 @@ export default function S05bFaceRegister() {
     <Screen progress={progressFor(ROUTES.faceRegister)} footer={footer}>
       <div className="bg-white">
         <div className="sc">
-          {!showCamera && (
+          {!showCamera && result !== 'detecting' && (
             <div className="aram-logo-wrap sc-anim-1" style={{ marginBottom: 0 }}>
-              {stage === 'captured' && photo ? (
+              {result === 'captured' && photo ? (
                 <img src={photo} alt="" className="face-capture-thumb" />
               ) : (
                 <div className="aram-logo-circle sc-float" style={{ fontSize: '2.8rem' }}>
-                  {stage === 'captured' ? '✅' : stage === 'error' ? '⚠️' : '🤳'}
+                  {result === 'captured' ? '✅' : result === 'noFace' || cam.stage === 'error' ? '⚠️' : '🤳'}
                 </div>
               )}
             </div>
@@ -135,8 +110,8 @@ export default function S05bFaceRegister() {
             <div className="cap-bullet">{t('s05b.why3')}</div>
           </div>
 
-          {stage === 'idle' && (
-            <button className="main-cta sc-anim-4" onClick={() => void startCamera()}>
+          {result === 'none' && cam.stage === 'idle' && (
+            <button className="main-cta sc-anim-4" onClick={() => void cam.start()}>
               <div className="main-cta-icon">🤳</div>
               <div className="main-cta-text">
                 <div className="main-cta-title">{t('s05b.captureCta')}</div>
@@ -150,45 +125,64 @@ export default function S05bFaceRegister() {
               <div className="face-camera-frame">
                 {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                 <video
-                  ref={videoRef}
+                  ref={cam.videoRef}
                   className="face-camera-video"
                   playsInline
                   muted
-                  onLoadedMetadata={() => setStage('streaming')}
+                  onLoadedMetadata={() => cam.setStage('streaming')}
                 />
               </div>
-              {stage === 'connecting' ? (
+              {cam.stage === 'connecting' ? (
                 <div className="note-card gray">
                   <span className="note-card-icon">⏳</span>
                   <span>{t('s05b.startingCamera')}</span>
                 </div>
               ) : (
-                <button className="btn btn-primary" style={{ flex: 'none', width: '100%' }} onClick={capture}>
+                <button className="btn btn-primary" style={{ flex: 'none', width: '100%' }} onClick={() => void handleCapture()}>
                   📸 {t('s05b.captureNow')}
                 </button>
               )}
             </div>
           )}
 
-          {stage === 'captured' && (
+          {result === 'detecting' && (
+            <div className="note-card gray sc-anim-4">
+              <span className="note-card-icon">⏳</span>
+              <span>{t('s05b.detecting')}</span>
+            </div>
+          )}
+
+          {result === 'captured' && (
             <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div className="note-card green">
                 <span className="note-card-icon">✅</span>
                 <span>{t('s05b.registered')}</span>
               </div>
-              <button className="btn btn-outline" onClick={retake}>
+              <button className="btn btn-outline" onClick={retry}>
                 🔄 {t('s05b.retake')}
               </button>
             </div>
           )}
 
-          {stage === 'error' && (
+          {result === 'noFace' && (
+            <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div className="note-card pink">
+                <span className="note-card-icon">⚠️</span>
+                <span>{t('s05b.noFaceDetected')}</span>
+              </div>
+              <button className="btn btn-outline" onClick={retry}>
+                {t('s05b.tryAgain')}
+              </button>
+            </div>
+          )}
+
+          {result === 'none' && cam.stage === 'error' && (
             <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div className="note-card pink">
                 <span className="note-card-icon">⚠️</span>
                 <span>{t('s05b.cameraError')}</span>
               </div>
-              <button className="btn btn-outline" onClick={() => void startCamera()}>
+              <button className="btn btn-outline" onClick={() => void cam.start()}>
                 {t('s05b.tryAgain')}
               </button>
             </div>

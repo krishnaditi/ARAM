@@ -33,6 +33,21 @@ export default defineConfig({
         // screen is exactly the one a child may open on a dead connection, and it is the
         // one that most needs to be able to read itself aloud.
         globPatterns: ['**/*.{js,css,html,svg,woff2,mp3}'],
+        // The face-api.js chunk (~1.3MB, dynamically imported — see lib/faceApi.ts) and the
+        // face-recognition model weights (~7MB, json+bin) are deliberately NOT precached
+        // with the shell — only S05b/S09 ever need them. Cache on first actual use instead,
+        // so face login still works offline on a second visit without bloating install size.
+        globIgnores: ['**/face-api.esm-*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/(models\/.*\.(json|bin)|assets\/face-api\.esm-.*\.js)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'face-models',
+              expiration: { maxEntries: 25, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+        ],
       },
     }),
   ],

@@ -142,6 +142,8 @@
     "cameraError": "We couldn't access your camera. That's okay — you can register your face later, and your PIN will always work to log in.",
     "tryAgain": "Try again",
     "scanning": "Scanning…",
+    "detecting": "Checking for a face…",
+    "noFaceDetected": "We couldn't see a face clearly. Try again with more light, facing the camera.",
     "registered": "Face registered! You can use it to log in next time.",
     "note": "This step is part of setting up your space. If it doesn't work on this device, your PIN always works."
   },
@@ -189,6 +191,10 @@
     "unlock": "Unlock",
     "faceLogin": "Log in with face",
     "faceScanning": "Scanning…",
+    "cancelFace": "Cancel",
+    "detecting": "Checking your face…",
+    "faceMismatch": "That doesn't look like a match. Try again, or use your PIN instead.",
+    "cameraError": "We couldn't access your camera. You can still log in with your PIN.",
     "errWrong": "That PIN wasn't right. {{remaining}} tries left.",
     "lockedTitle": "Too many attempts",
     "lockedSub": "For your safety this space is locked. Please contact your school coordinator to unlock it."

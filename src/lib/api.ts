@@ -1,4 +1,5 @@
 import { supabase, isBackendConfigured } from './supabaseClient'
+import { FACE_MATCH_THRESHOLD, descriptorDistance } from './faceApi'
 
 /**
  * Data-access layer for onboarding.
@@ -42,6 +43,13 @@ export interface VerifyPinResult {
   locked: boolean
 }
 
+export interface VerifyFaceResult {
+  ok: boolean
+  /** Euclidean distance to the registered descriptor (lower = more similar). Exposed for
+   * debugging/tuning FACE_MATCH_THRESHOLD, never shown to the child. */
+  distance: number
+}
+
 // ─────────────────────────── Supabase-backed implementation ───────────────────────────
 
 async function sbCreateChild(input: CreateChildInput): Promise<{ childId: string }> {
@@ -80,6 +88,21 @@ async function sbVerifyPin(childId: string, pin: string): Promise<VerifyPinResul
   return { ok: row.ok, remainingAttempts: row.remaining_attempts, locked: row.locked }
 }
 
+/** Stores the 128-d face descriptor produced client-side by faceApi.ts. The RPC (not yet
+ * written — see MEMORY) would keep it alongside the child row for verify_face to compare
+ * against; only the descriptor crosses the wire, never the photo itself. */
+async function sbRegisterFace(childId: string, descriptor: number[]): Promise<void> {
+  const { error } = await supabase!.rpc('register_face', { p_child_id: childId, p_descriptor: descriptor })
+  if (error) throw error
+}
+
+async function sbVerifyFace(childId: string, descriptor: number[]): Promise<VerifyFaceResult> {
+  const { data, error } = await supabase!.rpc('verify_face', { p_child_id: childId, p_descriptor: descriptor })
+  if (error) throw error
+  const row = data as { ok: boolean; distance: number }
+  return { ok: row.ok, distance: row.distance }
+}
+
 async function sbGetReturningContext(childId: string): Promise<ReturningContext> {
   const { data, error } = await supabase!.rpc('get_returning_context', { p_child_id: childId })
   if (error) throw error
@@ -110,6 +133,7 @@ interface MockChild {
   attempts: number
   locked: boolean
   clinicianAlertPending: boolean
+  faceDescriptor: number[] | null
 }
 
 function mockUuid(): string {
@@ -138,6 +162,7 @@ async function mockCreateChild(input: CreateChildInput): Promise<{ childId: stri
     attempts: 0,
     locked: false,
     clinicianAlertPending: false,
+    faceDescriptor: null,
   }
   writeMock(child)
   return { childId: child.childId }
@@ -160,6 +185,20 @@ async function mockVerifyPin(_childId: string, pin: string): Promise<VerifyPinRe
   writeMock(child)
   return { ok: false, remainingAttempts: remaining, locked: child.locked }
 }
+async function mockRegisterFace(_childId: string, descriptor: number[]): Promise<void> {
+  const child = readMock()
+  if (!child) return
+  child.faceDescriptor = descriptor
+  writeMock(child)
+}
+
+async function mockVerifyFace(_childId: string, descriptor: number[]): Promise<VerifyFaceResult> {
+  const child = readMock()
+  if (!child?.faceDescriptor) return { ok: false, distance: Infinity }
+  const distance = descriptorDistance(child.faceDescriptor, descriptor)
+  return { ok: distance < FACE_MATCH_THRESHOLD, distance }
+}
+
 async function mockGetReturningContext(): Promise<ReturningContext> {
   const child = readMock()
   return {
@@ -203,6 +242,10 @@ export const api = {
     isBackendConfigured ? sbFinalizeOnboarding(childId, consents) : mockFinalizeOnboarding(),
   verifyPin: (childId: string, pin: string) =>
     isBackendConfigured ? sbVerifyPin(childId, pin) : mockVerifyPin(childId, pin),
+  registerFace: (childId: string, descriptor: number[]) =>
+    isBackendConfigured ? sbRegisterFace(childId, descriptor) : mockRegisterFace(childId, descriptor),
+  verifyFace: (childId: string, descriptor: number[]) =>
+    isBackendConfigured ? sbVerifyFace(childId, descriptor) : mockVerifyFace(childId, descriptor),
   getReturningContext: (childId: string) =>
     isBackendConfigured ? sbGetReturningContext(childId) : mockGetReturningContext(),
   clearClinicianAlert: (childId: string) =>
