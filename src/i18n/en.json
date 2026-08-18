@@ -135,7 +135,12 @@
     "why2": "We never share your face data outside your account",
     "why3": "You can always use your PIN instead",
     "captureCta": "Register my face",
-    "captureCtaSub": "Tap and hold still for a moment",
+    "captureCtaSub": "Tap to turn on your camera",
+    "startingCamera": "Turning on your camera…",
+    "captureNow": "Capture",
+    "retake": "Retake photo",
+    "cameraError": "We couldn't access your camera. That's okay — you can register your face later, and your PIN will always work to log in.",
+    "tryAgain": "Try again",
     "scanning": "Scanning…",
     "registered": "Face registered! You can use it to log in next time.",
     "note": "This step is part of setting up your space. If it doesn't work on this device, your PIN always works."
