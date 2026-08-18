@@ -1,14 +1,18 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import en from './en.json'
+import hi from './hi.json'
 import ta from './ta.json'
+import te from './te.json'
+import ml from './ml.json'
 
 export type Language = 'en' | 'hi' | 'ta' | 'te' | 'ml'
 
-// Only English and Tamil have translated copy today. Hindi/Telugu/Malayalam are selectable
-// on S02 so the language step reflects the real student population, but i18next's
-// fallbackLng below renders them in English until those translation files are added —
-// never a crash, never blank text.
+// Every screen after S02 reads its copy from whichever of these the student picked, via
+// react-i18next's t(). fallbackLng below covers any key missing from a non-English file
+// (falls back to en, never a crash or blank text) rather than a language actually lacking
+// translated copy — all five now have full first-pass coverage (see MEMORY re: needing
+// native review before launch, same caveat as the original ta.json).
 
 const STORAGE_KEY = 'aram.lang'
 
@@ -42,7 +46,10 @@ function initialLanguage(): Language {
 void i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
+    hi: { translation: hi },
     ta: { translation: ta },
+    te: { translation: te },
+    ml: { translation: ml },
   },
   lng: initialLanguage(),
   fallbackLng: 'en',
