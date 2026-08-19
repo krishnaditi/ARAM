@@ -7,6 +7,7 @@ import { useOnboarding } from '../state/onboardingStore'
 export default function S04ParentConsent() {
   const nav = useNavigate()
   const { t } = useTranslation()
+  const isTNGovtSchool = useOnboarding((s) => s.isTNGovtSchool)
   const setParentConsent = useOnboarding((s) => s.setParentConsent)
 
   const onConsent = () => {
@@ -20,7 +21,7 @@ export default function S04ParentConsent() {
         ← {t('common.back')}
       </button>
       <button className="btn btn-green" onClick={onConsent}>
-        ✓ {t('s04.giveConsent')}
+        {isTNGovtSchool ? `${t('s04.proceed')} →` : `✓ ${t('s04.giveConsent')}`}
       </button>
     </div>
   )

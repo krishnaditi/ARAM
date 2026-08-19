@@ -108,7 +108,8 @@
     "privacy2": "Only minimal data shared with helplines in emergencies",
     "privacy3": "Your child's sessions are private",
     "consentNote": "By tapping 'I give my consent' you confirm you are a parent or guardian and agree to ARAM supporting this child.",
-    "giveConsent": "I give my consent"
+    "giveConsent": "I give my consent",
+    "proceed": "Proceed"
   },
   "s05": {
     "title": "Can I support you from here, {{name}}?",
