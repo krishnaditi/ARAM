@@ -23,6 +23,7 @@
   "s01": {
     "greetingLine": "{{greeting}}, {{name}}!",
     "welcome": "Welcome to your safe space.",
+    "welcomeSpoken": "Welcome to your safe space. I'm here to listen, support, and help you feel better. Let's Begin Your Journey.",
     "listen": "I'm here to listen, support, and help you feel better.",
     "brave": "You've just taken a brave step by being here. Whether you're feeling stressed, worried, sad, or just need someone to talk to — I'm here for you.",
     "ctaTitle": "Let's Begin Your Journey",
@@ -53,6 +54,7 @@
     "intro1": "This space is just for you.",
     "intro2": "Let's set it up.",
     "chooseLanguage": "Choose your language",
+    "chooseLanguageSpoken": "Please choose your language.",
     "english": "English",
     "hindi": "Hindi",
     "tamil": "Tamil",
@@ -80,7 +82,7 @@
   "s03": {
     "title": "What shall I call you?",
     "subtitle": "You can use a nickname or any name you like.",
-    "fieldsSpoken": "Please enter your nickname, your date of birth, and create a four-digit PIN.",
+    "fieldsSpoken": "Please fill the profile form.",
     "nickname": "Nickname",
     "nicknamePlaceholder": "Enter your nickname",
     "dob": "Date of birth",
@@ -138,6 +140,7 @@
     "why3": "You can always use your PIN instead",
     "captureCta": "Register my face",
     "captureCtaSub": "Tap to turn on your camera",
+    "captureCtaSpoken": "Please register — tap to turn on your camera.",
     "startingCamera": "Turning on your camera…",
     "captureNow": "Capture",
     "retake": "Retake photo",
@@ -184,11 +187,12 @@
     "declined": "Declined",
     "linked": "Linked",
     "settingsNote": "You can change camera and voice settings anytime from the menu.",
-    "readyNote": "ARAM is ready. Let's start by picking what you'd like to talk about today.",
+    "readyNote": "ARAM is ready. Let's begin by picking what you'd like to talk about today.",
     "beginCta": "Let's begin"
   },
   "s09": {
     "enterPin": "Enter your PIN",
+    "enterPinSpoken": "Welcome back! Enter your PIN, or log in with your registered face.",
     "note": "Your PIN keeps your space private. Forgot your PIN? Contact your school coordinator.",
     "unlock": "Unlock",
     "faceLogin": "Log in with face",
@@ -204,6 +208,7 @@
   "s10": {
     "greetingLine": "{{greeting}}, {{name}}!",
     "welcomeBack": "Welcome back! It's been {{days}} days since your last visit.",
+    "welcomeBackSpoken": "Welcome back!",
     "proud": "We're proud of your progress!",
     "statSessions": "Sessions Completed",
     "statStreak": "Day Streak",

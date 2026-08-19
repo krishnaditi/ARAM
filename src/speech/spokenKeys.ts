@@ -30,9 +30,12 @@ const ALL_LINES: Record<string, SpokenLine[]> = {
   // Read to a parent who may not read either script: consent that wasn't understood isn't consent.
   [ROUTES.parentConsent]: [
     { key: 's04.title', trigger: 'auto', tier: 'A' },
+    { key: 's04.subtitle', trigger: 'auto', tier: 'A' },
+    { key: 's04.doesTitle', trigger: 'auto', tier: 'A' },
     { key: 's04.does1', trigger: 'auto', tier: 'A' },
     { key: 's04.does2', trigger: 'auto', tier: 'A' },
     { key: 's04.does3', trigger: 'auto', tier: 'A' },
+    { key: 's04.privacyTitle', trigger: 'auto', tier: 'A' },
     { key: 's04.privacy1', trigger: 'auto', tier: 'A' },
     { key: 's04.privacy2', trigger: 'auto', tier: 'A' },
     { key: 's04.privacy3', trigger: 'auto', tier: 'A' },
@@ -42,14 +45,30 @@ const ALL_LINES: Record<string, SpokenLine[]> = {
   // The child is agreeing here — if they can't read it, the assent isn't real.
   [ROUTES.assent]: [
     { key: 's05.titleSpoken', trigger: 'auto', tier: 'A' },
+    { key: 's05.canTitle', trigger: 'auto', tier: 'A' },
+    { key: 's05.can1', trigger: 'auto', tier: 'A' },
+    { key: 's05.can2', trigger: 'auto', tier: 'A' },
+    { key: 's05.can3', trigger: 'auto', tier: 'A' },
+    { key: 's05.cannotTitle', trigger: 'auto', tier: 'A' },
+    { key: 's05.cannot1', trigger: 'auto', tier: 'A' },
+    { key: 's05.cannot2', trigger: 'auto', tier: 'A' },
+    { key: 's05.cannot3', trigger: 'auto', tier: 'A' },
     { key: 's05.warm', trigger: 'auto', tier: 'A' },
-    { key: 's05.question', trigger: 'auto', tier: 'A' },
+  ],
+
+  // Same tier as the other opt-in-toggle screens (camera/voice/profile/summary) — capture
+  // is mocked (see lib/faceApi.ts), and skipping it never blocks onboarding.
+  [ROUTES.faceRegister]: [
+    { key: 's05b.title', trigger: 'auto', tier: 'C' },
+    { key: 's05b.subtitle', trigger: 'auto', tier: 'C' },
+    { key: 's05b.captureCtaSpoken', trigger: 'auto', tier: 'C' },
   ],
 
   // Tap-only: this copy names self-harm, and being overheard hurts most the children it helps most.
   [ROUTES.reoffer]: [
     { key: 's11.title', trigger: 'tap', tier: 'A' },
     { key: 's11.warm', trigger: 'tap', tier: 'A' },
+    { key: 's11.note', trigger: 'tap', tier: 'A' },
   ],
   [ROUTES.emergency]: [
     { key: 'emergency.title', trigger: 'tap', tier: 'A' },
@@ -59,17 +78,16 @@ const ALL_LINES: Record<string, SpokenLine[]> = {
 
   [ROUTES.home]: [
     { key: GREETING_PLACEHOLDER, trigger: 'auto', tier: 'B' },
+    { key: 's10.welcomeBackSpoken', trigger: 'auto', tier: 'B' },
     { key: 's10.proud', trigger: 'auto', tier: 'B' },
     { key: 's10.todayLabel', trigger: 'auto', tier: 'B' },
   ],
   [ROUTES.welcome]: [
     { key: GREETING_PLACEHOLDER, trigger: 'auto', tier: 'B' },
-    { key: 's01.welcome', trigger: 'auto', tier: 'B' },
-    { key: 's01.listen', trigger: 'auto', tier: 'B' },
-    { key: 's01.brave', trigger: 'auto', tier: 'B' },
+    { key: 's01.welcomeSpoken', trigger: 'auto', tier: 'B' },
   ],
   [ROUTES.login]: [
-    { key: 's09.enterPin', trigger: 'auto', tier: 'B' },
+    { key: 's09.enterPinSpoken', trigger: 'auto', tier: 'B' },
     // Tap-only: a lockout names a failure, so don't announce it to the room.
     { key: 's09.lockedSub', trigger: 'tap', tier: 'B' },
   ],
@@ -84,22 +102,26 @@ const ALL_LINES: Record<string, SpokenLine[]> = {
   [ROUTES.language]: [
     { key: 's02.intro1', trigger: 'auto', tier: 'C' },
     { key: 's02.intro2', trigger: 'auto', tier: 'C' },
-    { key: 's02.chooseLanguage', trigger: 'auto', tier: 'C' },
+    { key: 's02.chooseLanguageSpoken', trigger: 'auto', tier: 'C' },
   ],
+  [ROUTES.schoolType]: [{ key: 's02b.title', trigger: 'auto', tier: 'C' }],
   [ROUTES.emis]: [{ key: 's02.schoolCodeSpoken', trigger: 'auto', tier: 'C' }],
   [ROUTES.profile]: [
     { key: 's03.title', trigger: 'auto', tier: 'C' },
-    { key: 's03.subtitle', trigger: 'auto', tier: 'C' },
     { key: 's03.fieldsSpoken', trigger: 'auto', tier: 'C' },
   ],
   [ROUTES.camera]: [
     { key: 's06.title', trigger: 'auto', tier: 'C' },
     { key: 's06.subtitle', trigger: 'auto', tier: 'C' },
+    { key: 's06.why1', trigger: 'auto', tier: 'C' },
+    { key: 's06.why2', trigger: 'auto', tier: 'C' },
+    { key: 's06.why3', trigger: 'auto', tier: 'C' },
     { key: 's06.note', trigger: 'tap', tier: 'C' },
   ],
   [ROUTES.voice]: [
     { key: 's07.title', trigger: 'auto', tier: 'C' },
     { key: 's07.subtitle', trigger: 'auto', tier: 'C' },
+    { key: 's07.why1', trigger: 'auto', tier: 'C' },
     { key: 's07.note', trigger: 'tap', tier: 'C' },
   ],
   [ROUTES.summary]: [
