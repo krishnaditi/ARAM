@@ -23,6 +23,9 @@ export default function S01Welcome() {
 
   const footer = (
     <div className="btn-row">
+      <button className="btn btn-outline" onClick={() => nav(ROUTES.login)}>
+        🔑 {t('common.login')}
+      </button>
       <button className="btn btn-primary" onClick={() => nav(ROUTES.language)}>
         {t('common.begin')} →
       </button>

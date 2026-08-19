@@ -25,18 +25,14 @@ export default function Screen({ progress, footer, children, hideLogout }: Scree
   return (
     <div className="app-shell">
       <div className="app-screen">
-        <VoiceControls />
-        {!hideLogout && (
-          <button
-            type="button"
-            className="logout-icon-btn"
-            onClick={onLogout}
-            aria-label={t('common.logout')}
-            title={t('common.logout')}
-          >
-            🔒
-          </button>
-        )}
+        <div className="app-topbar">
+          <VoiceControls />
+          {!hideLogout && (
+            <button type="button" className="logout-icon-btn" onClick={onLogout} title={t('common.logout')}>
+              🔒 {t('common.logout')}
+            </button>
+          )}
+        </div>
         {progress !== undefined && (
           <div className="app-progress">
             <div className="app-progress-fill" style={{ width: `${progress}%` }} />

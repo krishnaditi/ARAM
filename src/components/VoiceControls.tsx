@@ -39,7 +39,7 @@ export default function VoiceControls() {
   }
 
   return (
-    <>
+    <div className="voice-toggle-wrap">
       <button
         type="button"
         className={`voice-toggle${speechOn ? '' : ' off'}`}
@@ -51,6 +51,6 @@ export default function VoiceControls() {
         {speechOn ? '🔊' : '🔇'}
       </button>
       {showHint && <div className="voice-hint">🎧 {t('voice.headphonesHint')}</div>}
-    </>
+    </div>
   )
 }

@@ -135,30 +135,41 @@ button {
   gap: 0.8rem;
 }
 
-/* ── ARAM's voice ─────────────────────────────────────────────────────────────
-   The mute control sits in the frame itself rather than in any screen's layout, so it
-   is reachable in one tap from wherever a child is standing when they need silence —
-   this app gets used in classrooms, so that is a privacy control, not a preference. */
-/* ── Logout (header) ──────────────────────────────────────────────────────────
-   Rendered from <Screen> on every screen except S01 (nothing to log out of yet), so it
-   always sits in the same top-right corner regardless of which screen is active. */
-.logout-icon-btn {
+/* ── Header topbar (mute + logout) ────────────────────────────────────────────
+   A flex row anchored top-right, not two independently-positioned corner buttons —
+   the logout pill now shows its label text, and that label's width varies by
+   language (Malayalam/Tamil "Logout" isn't the same width as English), so the mute
+   button next to it needs to reflow with a gap rather than sit at a hardcoded offset. */
+.app-topbar {
   position: absolute;
   top: calc(0.8rem + env(safe-area-inset-top));
   right: 0.8rem;
   z-index: 21;
-  width: 3.4rem;
-  height: 3.4rem;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ── Logout ────────────────────────────────────────────────────────────────────
+   Rendered from <Screen> on every screen except S01 (nothing to log out of yet), so it
+   always sits in the same top-right spot regardless of which screen is active. Shows
+   its label, not just the lock icon — an icon-only control here reads as decoration. */
+.logout-icon-btn {
+  border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  font-size: 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
   line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
   backdrop-filter: blur(6px);
 }
 .logout-icon-btn:hover {
@@ -191,11 +202,14 @@ button {
   opacity: 0.85;
 }
 
+/* Wraps just the toggle button so .voice-hint (below) can anchor to it directly,
+   instead of the whole screen — the toggle is now a normal flex child of .app-topbar
+   and its position isn't a fixed offset the hint could otherwise assume. */
+.voice-toggle-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
 .voice-toggle {
-  position: absolute;
-  top: calc(0.8rem + env(safe-area-inset-top));
-  /* Shifted left of .logout-icon-btn, which always claims the corner slot. */
-  right: 4.6rem;
   z-index: 20;
   width: 3.4rem;
   height: 3.4rem;
@@ -218,8 +232,8 @@ button {
 
 .voice-hint {
   position: absolute;
-  top: calc(4.6rem + env(safe-area-inset-top));
-  right: 4.6rem;
+  top: calc(100% + 0.6rem);
+  right: 0;
   z-index: 20;
   max-width: 26rem;
   padding: 0.7rem 1rem;
