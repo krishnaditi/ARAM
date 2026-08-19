@@ -4,24 +4,27 @@ Render ARAM's voice clips with AI4Bharat Indic Parler-TTS (Apache 2.0).
 
 Run this ONCE, offline, on a free GPU (Colab or Kaggle). The output is a set of small MP3s
 committed to public/audio/ and served as static files by Vercel. Nothing synthesises at
-runtime: browser TTS has no Tamil voice on most devices and none at all on Firefox, and
-with 27 fixed lines shared by all 15,000 users, per-visit synthesis would regenerate
-identical sentences thousands of times — on a platform that has no GPU to do it on.
+runtime: browser TTS has no Indic-language voices on most devices and none at all on
+Firefox, and with ~59 fixed lines shared by all 15,000 users across 5 languages, per-visit
+synthesis would regenerate identical sentences thousands of times — on a platform that has
+no GPU to do it on.
 
     pip install git+https://github.com/huggingface/parler-tts.git soundfile numpy
     huggingface-cli login          # the model is gated; accept its terms on HF first
     python scripts/render_tts.py --dry-run
     python scripts/render_tts.py
 
-Indic Parler-TTS was chosen over IndicF5 for two reasons: it covers English as well as
-Tamil (IndicF5 is Indic-only, so it cannot speak half of this app), and the voice is set by
-a written description rather than a reference recording, so no one has to supply or license
-a cloned voice.
+Indic Parler-TTS was chosen over IndicF5 for two reasons: it covers English as well as the
+Indic languages (IndicF5 is Indic-only, so it cannot speak the English half of this app),
+and the voice is set by a written description rather than a reference recording, so no one
+has to supply or license a cloned voice.
 
-Voice consistency is the thing to watch. All 27 lines must sound like the same person, so
-the description below names a speaker and is reused verbatim for every clip in a language.
-Check the model card's recommended speakers per language and put one in --desc-*; an
-unnamed description drifts between generations and ARAM ends up sounding like a committee.
+Voice consistency is the thing to watch. Every line in a language must sound like the same
+person, so the description below names a speaker and is reused verbatim for every clip in
+that language. Check the model card's recommended speakers per language and put one in
+--desc-*; an unnamed description drifts between generations and ARAM ends up sounding like
+a committee. (Currently: en=Mary, hi=Divya, ta=Jaya, te=Lalitha, ml=Anjali — all pulled from
+the model card's own per-language recommended-speaker list.)
 
 MP3 rather than Opus or AAC: Opus-in-Ogg is unreliable in Safari and Firefox's AAC support
 depends on system codecs. MP3 decodes everywhere, which is the entire point of clips.
@@ -64,7 +67,7 @@ DEFAULT_DESC = (
     "{speaker} speaks in a warm, gentle, reassuring voice at a slow and unhurried pace. "
     "The recording is very clear and close-sounding, with no background noise."
 )
-DEFAULT_SPEAKER = {"en": "Mary", "ta": "Jaya"}
+DEFAULT_SPEAKER = {"en": "Mary", "hi": "Divya", "ta": "Jaya", "te": "Lalitha", "ml": "Anjali"}
 
 GREETING_PLACEHOLDER = "greeting.__timeOfDay__"
 GREETING_KEYS = [
@@ -354,8 +357,13 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     p.add_argument("--desc-en", help="voice description for English (see docstring)")
+    p.add_argument("--desc-hi", help="voice description for Hindi")
     p.add_argument("--desc-ta", help="voice description for Tamil")
-    p.add_argument("--langs", default="en,ta", help="languages to render (default: en,ta)")
+    p.add_argument("--desc-te", help="voice description for Telugu")
+    p.add_argument("--desc-ml", help="voice description for Malayalam")
+    p.add_argument(
+        "--langs", default="en,hi,ta,te,ml", help="languages to render (default: en,hi,ta,te,ml)"
+    )
     p.add_argument("--force", action="store_true", help="re-render clips that already exist")
     p.add_argument("--dry-run", action="store_true", help="print what would be spoken and exit")
     p.add_argument(
@@ -387,7 +395,13 @@ def main() -> None:
     if not shutil.which("ffmpeg"):
         die("ffmpeg not found — needed to convert WAV to MP3")
 
-    descs = {"en": args.desc_en, "ta": args.desc_ta}
+    descs = {
+        "en": args.desc_en,
+        "hi": args.desc_hi,
+        "ta": args.desc_ta,
+        "te": args.desc_te,
+        "ml": args.desc_ml,
+    }
     for lang in langs:
         desc = descs.get(lang) or DEFAULT_DESC.format(
             speaker=DEFAULT_SPEAKER.get(lang, "The speaker")
