@@ -229,5 +229,5 @@ dev-dist/
 # Raw TTS output straight from Colab. public/audio/ holds the conditioned clips the app
 # actually plays; these are the unprocessed originals and are reproducible by re-running
 # scripts/aram_colab_render.py.
-aram-audio/
+aram_audio/
 scripts/__pycache__/
