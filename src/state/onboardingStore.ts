@@ -9,6 +9,8 @@ export interface DobParts {
   year: string
 }
 
+export type StaffRole = 'student' | 'parent' | 'headmaster' | 'counsellor' | 'admin'
+
 /** Derive a coarse age band from a DOB. The full DOB is NEVER persisted or sent. */
 export function deriveAgeGroup(dob: DobParts, now: Date = new Date()): string | null {
   const d = Number(dob.day)
@@ -63,6 +65,11 @@ interface OnboardingState {
   // always starts locked, so the PIN gate can't be bypassed by opening /home directly.
   unlocked: boolean
 
+  // Staff access is kept separate from the student account and is session-only.
+  staffRole: StaffRole | null
+  staffName: string
+  staffUnlocked: boolean
+
   // Actions
   setLanguage: (lang: Language) => void
   setIsTNGovtSchool: (v: boolean) => void
@@ -83,6 +90,8 @@ interface OnboardingState {
   clearSecrets: () => void
   unlock: () => void
   logout: () => void
+  setStaffSession: (role: Exclude<StaffRole, 'student'>, name: string) => void
+  clearStaffSession: () => void
   reset: () => void
 }
 
@@ -115,6 +124,9 @@ export const useOnboarding = create<OnboardingState>()(
       pin: '',
       pinConfirm: '',
       unlocked: false,
+      staffRole: null,
+      staffName: '',
+      staffUnlocked: false,
 
       setLanguage: (language) => {
         applyLanguage(language)
@@ -140,6 +152,8 @@ export const useOnboarding = create<OnboardingState>()(
       clearSecrets: () => set({ dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
       unlock: () => set({ unlocked: true }),
       logout: () => set({ unlocked: false }),
+      setStaffSession: (staffRole, staffName) => set({ staffRole, staffName, staffUnlocked: true }),
+      clearStaffSession: () => set({ staffRole: null, staffName: '', staffUnlocked: false }),
       reset: () =>
         set({
           isTNGovtSchool: null,

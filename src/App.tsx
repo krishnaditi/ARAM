@@ -18,6 +18,8 @@ import S09Login from './screens/S09Login'
 import S10Home from './screens/S10Home'
 import S11Reoffer from './screens/S11Reoffer'
 import Emergency from './screens/Emergency'
+import StaffRegister from './screens/StaffRegister'
+import StaffDashboard from './screens/StaffDashboard'
 
 /** New/returning-user split: a device with a CHILD record starts at PIN login,
  * unless this session is already unlocked, in which case go straight home. */
@@ -47,6 +49,12 @@ function RequireAccount({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+function RequireStaff({ children }: { children: ReactNode }) {
+  const staffUnlocked = useOnboarding((s) => s.staffUnlocked)
+  if (!staffUnlocked) return <Navigate to={ROUTES.login} replace />
+  return <>{children}</>
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -71,6 +79,11 @@ export default function App() {
           }
         />
         <Route path={ROUTES.login} element={<S09Login />} />
+        <Route path={ROUTES.staffRegister} element={<StaffRegister />} />
+        <Route
+          path={ROUTES.staffDashboard}
+          element={<RequireStaff><StaffDashboard /></RequireStaff>}
+        />
         <Route
           path={ROUTES.home}
           element={

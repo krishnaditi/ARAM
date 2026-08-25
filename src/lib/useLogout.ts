@@ -15,8 +15,15 @@ export function useLogout(): () => void {
   const unlocked = useOnboarding((s) => s.unlocked)
   const logout = useOnboarding((s) => s.logout)
   const reset = useOnboarding((s) => s.reset)
+  const staffUnlocked = useOnboarding((s) => s.staffUnlocked)
+  const clearStaffSession = useOnboarding((s) => s.clearStaffSession)
 
   return () => {
+    if (staffUnlocked) {
+      clearStaffSession()
+      nav(ROUTES.login)
+      return
+    }
     if (unlocked) {
       if (!window.confirm(t('common.logoutConfirm'))) return
       logout()

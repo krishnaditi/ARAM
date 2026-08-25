@@ -5,7 +5,9 @@ for students. Responsive PWA (phone / tablet / laptop), English + Tamil, voice +
 
 This repo currently implements the **onboarding section** (prototype screens S01–S11)
 pixel-matched to the approved design, plus the returning-user home and an always-available
-emergency helpline.
+emergency helpline. The login page also includes prototype role entry for students, parents,
+headmasters, psychologists/counsellors, and admins. Staff registration and face sign-in use
+local browser storage for UI review; staff dashboards are static until a staff backend is added.
 
 ---
 
@@ -35,6 +37,14 @@ npm run lint       # oxlint
 Without Supabase env vars the app runs in **mock mode** — the full UI works end-to-end
 using local storage, so seniors/owner can review on a preview URL before any backend
 exists. Mock mode is dev-only and clearly not secure; it must never touch real data.
+
+### Role login prototype
+
+Selecting **Student** opens the existing PIN/face login and onboarding flow. Parent,
+headmaster, and psychologist/counsellor users register a name and face, then are signed in
+automatically to a basic role dashboard. Admin uses the prototype credentials `admin` /
+`aram-admin`. These staff accounts and face descriptors are local demo data only and must be
+replaced with authenticated backend records before deployment.
 
 ## Backend (Supabase)
 

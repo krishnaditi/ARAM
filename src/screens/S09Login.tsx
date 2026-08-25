@@ -5,10 +5,11 @@ import Screen from '../components/Screen'
 import PinEntry from '../components/PinEntry'
 import BrandLogo from '../components/BrandLogo'
 import { ROUTES } from '../flow'
-import { useOnboarding } from '../state/onboardingStore'
+import { useOnboarding, type StaffRole } from '../state/onboardingStore'
 import { api } from '../lib/api'
 import { useCamera } from '../lib/useCamera'
 import { getFaceDescriptor, loadFaceModels } from '../lib/faceApi'
+import { adminDemoCredentials, staffLabel, verifyAdmin } from '../lib/staffAuth'
 
 type FaceResult = 'none' | 'detecting' | 'mismatch' | 'noFace'
 
@@ -22,6 +23,10 @@ export default function S09Login() {
   const [error, setError] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<StaffRole | null>(null)
+  const [adminUsername, setAdminUsername] = useState('')
+  const [adminPassword, setAdminPassword] = useState('')
+  const setStaffSession = useOnboarding((s) => s.setStaffSession)
 
   const cam = useCamera()
   const [faceActive, setFaceActive] = useState(false)
@@ -99,6 +104,86 @@ export default function S09Login() {
       return
     }
     setFaceResult('mismatch')
+  }
+
+  const roleOptions: { role: StaffRole; icon: string }[] = [
+    { role: 'student', icon: '🎓' },
+    { role: 'parent', icon: '👨‍👩‍👧' },
+    { role: 'headmaster', icon: '🏫' },
+    { role: 'counsellor', icon: '🧠' },
+    { role: 'admin', icon: '⚙️' },
+  ]
+
+  if (!selectedRole) {
+    return (
+      <Screen hideLogout>
+        <div className="bg-gradient">
+          <div className="sc" style={{ justifyContent: 'center', gap: '1.2rem' }}>
+            <BrandLogo animation="bounce" taglineKey="welcomeBack" />
+            <div style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 800 }}>Who is logging in?</div>
+            <div className="sc-anim-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {roleOptions.map((option) => (
+                <button key={option.role} className="sc-option" onClick={() => setSelectedRole(option.role)}>
+                  <span className="sc-option-icon">{option.icon}</span>
+                  <div className="sc-option-title">{staffLabel(option.role)}</div>
+                  <span style={{ marginLeft: 'auto', fontSize: '1.4rem' }}>→</span>
+                </button>
+              ))}
+            </div>
+            {!childId && <div className="note-card gray">Choose Student to start the student onboarding journey.</div>}
+          </div>
+        </div>
+      </Screen>
+    )
+  }
+
+  if (selectedRole === 'student' && !childId) {
+    return (
+      <Screen footer={<div className="btn-row"><button className="btn btn-back" onClick={() => setSelectedRole(null)}>← Back</button></div>}>
+        <div className="bg-gradient">
+          <div className="sc" style={{ justifyContent: 'center', gap: '1.5rem' }}>
+            <BrandLogo animation="bounce" taglineKey="welcomeBack" />
+            <div className="note-card teal">No student account is registered on this device yet.</div>
+            <button className="btn btn-primary" onClick={() => nav(ROUTES.language)}>Start student onboarding →</button>
+          </div>
+        </div>
+      </Screen>
+    )
+  }
+
+  if (selectedRole !== 'student' && selectedRole !== 'admin') {
+    return (
+      <Screen footer={<div className="btn-row"><button className="btn btn-back" onClick={() => setSelectedRole(null)}>← Back</button></div>}>
+        <div className="bg-gradient">
+          <div className="sc" style={{ justifyContent: 'center', gap: '1.5rem' }}>
+            <BrandLogo animation="bounce" taglineKey="welcomeBack" />
+            <div className="note-card teal">{staffLabel(selectedRole)} access uses name and face registration.</div>
+            <button className="btn btn-primary" onClick={() => nav(`${ROUTES.staffRegister}?role=${selectedRole}`)}>
+              Register or sign in with face →
+            </button>
+          </div>
+        </div>
+      </Screen>
+    )
+  }
+
+  if (selectedRole === 'admin') {
+    const demo = adminDemoCredentials()
+    const adminError = adminUsername && adminPassword && !verifyAdmin(adminUsername, adminPassword)
+    return (
+      <Screen footer={<div className="btn-row"><button className="btn btn-back" onClick={() => setSelectedRole(null)}>← Back</button><button className="btn btn-primary" disabled={!adminUsername || !adminPassword} onClick={() => { if (verifyAdmin(adminUsername, adminPassword)) { setStaffSession('admin', 'Administrator'); nav(ROUTES.staffDashboard) } }}>Login →</button></div>}>
+        <div className="bg-gradient">
+          <div className="sc" style={{ justifyContent: 'center', gap: '1.2rem' }}>
+            <BrandLogo animation="bounce" taglineKey="welcomeBack" />
+            <div style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 800 }}>Admin login</div>
+            <input className="sc-input" value={adminUsername} onChange={(event) => setAdminUsername(event.target.value)} placeholder="Username" autoComplete="username" />
+            <input className="sc-input" type="password" value={adminPassword} onChange={(event) => setAdminPassword(event.target.value)} placeholder="Password" autoComplete="current-password" />
+            {adminError && <div className="note-card pink">⚠️ Incorrect admin credentials.</div>}
+            <div className="note-card gray">Demo login: {demo.username} / {demo.password}</div>
+          </div>
+        </div>
+      </Screen>
+    )
   }
 
   const footer = locked ? (

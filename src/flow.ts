@@ -15,6 +15,8 @@ export const ROUTES = {
   home: '/home', // S10 returning home
   reoffer: '/reoffer', // S11 clinician-alert re-offer
   emergency: '/emergency', // always-available helpline
+  staffRegister: '/staff-register',
+  staffDashboard: '/staff-dashboard',
 } as const
 
 /** Linear new-user step order, used to compute progress and next/back. The EMIS step is
