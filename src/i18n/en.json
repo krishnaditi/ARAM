@@ -190,6 +190,7 @@
     "readyNote": "ARAM is ready. Let's begin by picking what you'd like to talk about today.",
     "beginCta": "Let's begin"
   },
+  "loginLanguage": { "title": "Choose your preferred language before you continue." },
   "s09": {
     "enterPin": "Enter your PIN",
     "enterPinSpoken": "Welcome back! Enter your PIN, or log in with your registered face.",
@@ -257,6 +258,19 @@
     "emergencySub": "Immediate danger",
     "reassure": "Reaching out is a brave and strong thing to do. These services are free and confidential.",
     "back": "Back to safety"
+  },
+  "staff": {
+    "roles": { "parent": "Parent", "headmaster": "Headmaster", "counsellor": "Psychologist / counsellor", "admin": "Admin" },
+    "welcome": "Welcome, {{name}}", "dashboard": "{{role}} dashboard", "workspace": "{{role}} workspace",
+    "ready": "Your dashboard is ready for the next phase of ARAM.",
+    "childProfile": "Child profile", "childProfileSub": "View basic profile information",
+    "wellbeing": "Wellbeing overview", "wellbeingSub": "Review recent check-in status",
+    "support": "Support", "supportSub": "Find emergency support contacts",
+    "students": "Students", "studentsSub": "View students connected to your school",
+    "reports": "Reports", "reportsSub": "Review wellbeing activity and alerts",
+    "settings": "Settings", "settingsSub": "Manage your dashboard preferences",
+    "details": "Detailed data, reports, and permissions will appear here as those modules are connected.",
+    "emergency": "Emergency support"
   },
   "voice": {
     "speak": "Tap to speak",

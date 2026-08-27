@@ -1,25 +1,27 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
-import { staffLabel } from '../lib/staffAuth'
 
 export default function StaffDashboard() {
   const nav = useNavigate()
+  const { t } = useTranslation()
   const role = useOnboarding((s) => s.staffRole)
   const name = useOnboarding((s) => s.staffName)
-  const label = role ? staffLabel(role) : 'Staff'
+  const roleKey = role === 'parent' || role === 'headmaster' || role === 'counsellor' || role === 'admin' ? role : 'admin'
+  const label = t(`staff.roles.${roleKey}`)
 
   const cards = role === 'parent'
     ? [
-        ['👤', 'Child profile', 'View basic profile information'],
-        ['📊', 'Wellbeing overview', 'Review recent check-in status'],
-        ['🆘', 'Support', 'Find emergency support contacts'],
+        ['👤', t('staff.childProfile'), t('staff.childProfileSub')],
+        ['📊', t('staff.wellbeing'), t('staff.wellbeingSub')],
+        ['🆘', t('staff.support'), t('staff.supportSub')],
       ]
     : [
-        ['👥', 'Students', 'View students connected to your school'],
-        ['📊', 'Reports', 'Review wellbeing activity and alerts'],
-        ['⚙️', 'Settings', 'Manage your dashboard preferences'],
+        ['👥', t('staff.students'), t('staff.studentsSub')],
+        ['📊', t('staff.reports'), t('staff.reportsSub')],
+        ['⚙️', t('staff.settings'), t('staff.settingsSub')],
       ]
 
   return (
@@ -29,8 +31,8 @@ export default function StaffDashboard() {
           <div className="ret-header sc-anim-1">
             <div className="ret-avatar">{name.charAt(0).toUpperCase()}</div>
             <div className="ret-greeting-block">
-              <div className="ret-greeting">Welcome, {name}</div>
-              <div className="ret-sub">{label} dashboard</div>
+              <div className="ret-greeting">{t('staff.welcome', { name })}</div>
+              <div className="ret-sub">{t('staff.dashboard', { role: label })}</div>
             </div>
             <div className="ret-logo-block">
               <div className="ret-logo-circle sc-bounce">🤲</div>
@@ -41,8 +43,8 @@ export default function StaffDashboard() {
           <div className="progress-card sc-anim-2">
             <div className="progress-icon">📋</div>
             <div>
-              <div className="progress-title">{label} workspace</div>
-              <div className="progress-sub">Your dashboard is ready for the next phase of ARAM.</div>
+              <div className="progress-title">{t('staff.workspace', { role: label })}</div>
+              <div className="progress-sub">{t('staff.ready')}</div>
             </div>
           </div>
 
@@ -60,11 +62,11 @@ export default function StaffDashboard() {
 
           <div className="note-card teal sc-anim-4">
             <span className="note-card-icon">ℹ️</span>
-            <span>Detailed data, reports, and permissions will appear here as those modules are connected.</span>
+            <span>{t('staff.details')}</span>
           </div>
 
           <button className="urgent-btn sc-anim-5" onClick={() => nav(ROUTES.emergency)}>
-            🆘 Emergency support
+            🆘 {t('staff.emergency')}
           </button>
         </div>
       </div>

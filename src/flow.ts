@@ -12,6 +12,7 @@ export const ROUTES = {
   voice: '/voice', // S07
   summary: '/summary', // S08 consent summary
   login: '/login', // S09 PIN login (returning)
+  loginLanguage: '/login-language',
   home: '/home', // S10 returning home
   reoffer: '/reoffer', // S11 clinician-alert re-offer
   emergency: '/emergency', // always-available helpline
