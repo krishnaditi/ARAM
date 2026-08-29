@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aram-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aram
+      POSTGRES_USER: aram
+      POSTGRES_PASSWORD: aram-local-only
+    ports:
+      - "5432:5432"
+    volumes:
+      - aram-postgres-data:/var/lib/postgresql/data
+      - ./supabase/local/0000_roles.sql:/docker-entrypoint-initdb.d/0000_roles.sql:ro
+      - ./supabase/migrations/0001_init.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
+      - ./supabase/migrations/0002_user_roles_and_student_details.sql:/docker-entrypoint-initdb.d/0002_user_roles_and_student_details.sql:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: aram-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://aram:aram-local-only@postgres:5432/aram
+      FRONTEND_ORIGIN: http://localhost:5173
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+
+volumes:
+  aram-postgres-data:

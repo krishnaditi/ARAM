@@ -68,6 +68,7 @@ interface OnboardingState {
   // Staff access is kept separate from the student account and is session-only.
   staffRole: StaffRole | null
   staffName: string
+  staffUserId: string | null
   staffUnlocked: boolean
 
   // Actions
@@ -90,7 +91,7 @@ interface OnboardingState {
   clearSecrets: () => void
   unlock: () => void
   logout: () => void
-  setStaffSession: (role: Exclude<StaffRole, 'student'>, name: string) => void
+  setStaffSession: (role: Exclude<StaffRole, 'student'>, name: string, userId?: string) => void
   clearStaffSession: () => void
   reset: () => void
 }
@@ -126,6 +127,7 @@ export const useOnboarding = create<OnboardingState>()(
       unlocked: false,
       staffRole: null,
       staffName: '',
+      staffUserId: null,
       staffUnlocked: false,
 
       setLanguage: (language) => {
@@ -152,8 +154,9 @@ export const useOnboarding = create<OnboardingState>()(
       clearSecrets: () => set({ dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
       unlock: () => set({ unlocked: true }),
       logout: () => set({ unlocked: false }),
-      setStaffSession: (staffRole, staffName) => set({ staffRole, staffName, staffUnlocked: true }),
-      clearStaffSession: () => set({ staffRole: null, staffName: '', staffUnlocked: false }),
+      setStaffSession: (staffRole, staffName, staffUserId = undefined) =>
+        set({ staffRole, staffName, staffUserId: staffUserId ?? null, staffUnlocked: true }),
+      clearStaffSession: () => set({ staffRole: null, staffName: '', staffUserId: null, staffUnlocked: false }),
       reset: () =>
         set({
           isTNGovtSchool: null,

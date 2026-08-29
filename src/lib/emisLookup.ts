@@ -6,7 +6,7 @@ export interface EmisRecord {
 
 /**
  * Hardcoded stand-in for the real Tamil Nadu EMIS registry lookup (no database yet — see
- * api.ts for the same mock-vs-Supabase pattern used elsewhere). EMIS 1234 is the only
+ * api.ts for the same mock-vs-API pattern used elsewhere). EMIS 1234 is the only
  * code that resolves, for demoing S02c before the real integration exists.
  */
 const MOCK_EMIS_DB: Record<string, EmisRecord> = {

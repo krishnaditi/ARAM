@@ -1,16 +1,24 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
+import { api, type DashboardSummary } from '../lib/api'
 
 export default function StaffDashboard() {
   const nav = useNavigate()
   const { t } = useTranslation()
   const role = useOnboarding((s) => s.staffRole)
   const name = useOnboarding((s) => s.staffName)
+  const userId = useOnboarding((s) => s.staffUserId)
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const roleKey = role === 'parent' || role === 'headmaster' || role === 'counsellor' || role === 'admin' ? role : 'admin'
   const label = t(`staff.roles.${roleKey}`)
+
+  useEffect(() => {
+    if (userId) void api.dashboard(userId).then(setSummary)
+  }, [userId])
 
   const cards = role === 'parent'
     ? [
@@ -59,6 +67,12 @@ export default function StaffDashboard() {
               </div>
             ))}
           </div>
+
+          {summary && (
+            <div className="note-card green sc-anim-4">
+              {summary.students} students · {summary.sessions} sessions · {summary.alerts} alerts
+            </div>
+          )}
 
           <div className="note-card teal sc-anim-4">
             <span className="note-card-icon">ℹ️</span>

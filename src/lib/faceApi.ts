@@ -1,8 +1,7 @@
 /**
  * Client-side face detection + matching, entirely on-device (models load from /models,
  * inference runs in the browser via TF.js — no image or descriptor ever leaves the device
- * unless a future Supabase-backed verify_face RPC is wired in, mirroring api.ts's existing
- * mock-vs-Supabase split).
+ * unless the PostgreSQL API is configured, mirroring api.ts's existing mock-vs-API split).
  *
  * A face is represented as a 128-number descriptor, not the photo itself: registering and
  * verifying both reduce to "detect a face, describe it," and matching is just a distance

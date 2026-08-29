@@ -9,7 +9,7 @@ import { useOnboarding, type StaffRole } from '../state/onboardingStore'
 import { api } from '../lib/api'
 import { useCamera } from '../lib/useCamera'
 import { getFaceDescriptor, loadFaceModels } from '../lib/faceApi'
-import { adminDemoCredentials, staffLabel, verifyAdmin } from '../lib/staffAuth'
+import { adminDemoCredentials, loginAdmin, staffLabel } from '../lib/staffAuth'
 
 type FaceResult = 'none' | 'detecting' | 'mismatch' | 'noFace'
 
@@ -27,6 +27,7 @@ export default function S09Login() {
   const [adminUsername, setAdminUsername] = useState('')
   const [adminPassword, setAdminPassword] = useState('')
   const setStaffSession = useOnboarding((s) => s.setStaffSession)
+  const setLanguage = useOnboarding((s) => s.setLanguage)
 
   const cam = useCamera()
   const [faceActive, setFaceActive] = useState(false)
@@ -169,16 +170,33 @@ export default function S09Login() {
 
   if (selectedRole === 'admin') {
     const demo = adminDemoCredentials()
-    const adminError = adminUsername && adminPassword && !verifyAdmin(adminUsername, adminPassword)
+    const onAdminLogin = async () => {
+      setBusy(true)
+      setError(null)
+      try {
+        const result = await loginAdmin(adminUsername, adminPassword)
+        if (!result.ok || !result.display_name) {
+          setError('Incorrect admin credentials.')
+          return
+        }
+        if (result.language) setLanguage(result.language as Parameters<typeof setLanguage>[0])
+        setStaffSession('admin', result.display_name, result.user_id)
+        nav(ROUTES.staffDashboard)
+      } catch {
+        setError('Admin login is unavailable. Check that the API is running.')
+      } finally {
+        setBusy(false)
+      }
+    }
     return (
-      <Screen footer={<div className="btn-row"><button className="btn btn-back" onClick={() => setSelectedRole(null)}>← Back</button><button className="btn btn-primary" disabled={!adminUsername || !adminPassword} onClick={() => { if (verifyAdmin(adminUsername, adminPassword)) { setStaffSession('admin', 'Administrator'); nav(ROUTES.staffDashboard) } }}>Login →</button></div>}>
+      <Screen footer={<div className="btn-row"><button className="btn btn-back" onClick={() => setSelectedRole(null)}>← Back</button><button className="btn btn-primary" disabled={!adminUsername || !adminPassword || busy} onClick={() => void onAdminLogin()}>Login →</button></div>}>
         <div className="bg-gradient">
           <div className="sc" style={{ justifyContent: 'center', gap: '1.2rem' }}>
             <BrandLogo animation="bounce" taglineKey="welcomeBack" />
             <div style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 800 }}>Admin login</div>
             <input className="sc-input" value={adminUsername} onChange={(event) => setAdminUsername(event.target.value)} placeholder="Username" autoComplete="username" />
             <input className="sc-input" type="password" value={adminPassword} onChange={(event) => setAdminPassword(event.target.value)} placeholder="Password" autoComplete="current-password" />
-            {adminError && <div className="note-card pink">⚠️ Incorrect admin credentials.</div>}
+            {error && <div className="note-card pink">⚠️ {error}</div>}
             <div className="note-card gray">Demo login: {demo.username} / {demo.password}</div>
           </div>
         </div>

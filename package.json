@@ -13,7 +13,6 @@
     "preview": "npx --yes node@22 node_modules/vite/bin/vite.js preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.10",
     "@vladmandic/face-api": "^1.7.15",
     "i18next": "^24.2.0",
     "react": "^19.2.7",

@@ -22,7 +22,7 @@ local browser storage for UI review; staff dashboards are static until a staff b
 | PWA | vite-plugin-pwa | Installable, offline shell, runs on any device |
 | Voice in | Web Speech API behind `ISpeech` | Free; swappable for Whisper/cloud later |
 | Voice out | Pre-rendered clips (AI4Bharat **Indic Parler-TTS**, Apache 2.0) | Covers English *and* Tamil; identical on every browser; no runtime cost |
-| Data | Supabase (Postgres + RLS), **ap-south-1 Mumbai** | Low cost, India data residency |
+| Data/API | PostgreSQL + FastAPI + Pydantic | Local or self-hosted deployment |
 
 ## Getting started
 
@@ -34,9 +34,9 @@ npm run preview    # serve the production build locally
 npm run lint       # oxlint
 ```
 
-Without Supabase env vars the app runs in **mock mode** — the full UI works end-to-end
-using local storage, so seniors/owner can review on a preview URL before any backend
-exists. Mock mode is dev-only and clearly not secure; it must never touch real data.
+Without `VITE_API_URL` the app runs in **mock mode** for UI review. With the local stack
+running, registrations and student onboarding data are stored in PostgreSQL through the
+FastAPI/Pydantic API.
 
 ### Role login prototype
 
@@ -46,23 +46,33 @@ automatically to a basic role dashboard. Admin uses the prototype credentials `a
 `aram-admin`. These staff accounts and face descriptors are local demo data only and must be
 replaced with authenticated backend records before deployment.
 
-## Backend (Supabase)
+## Local PostgreSQL backend
 
-1. Create a Supabase project in the **ap-south-1 (Mumbai)** region.
-2. Run `supabase/migrations/0001_init.sql` (SQL editor or `supabase db push`).
-3. Copy `.env.example` → `.env.local` and fill `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
-   (the **public anon key** only — never the service_role key).
+1. Start PostgreSQL and the API with `sudo docker compose up -d --build`.
+2. Copy `.env.example` to `.env.local`.
+3. Run the frontend with `npm run dev`.
+4. Apply `supabase/migrations/0002_user_roles_and_student_details.sql` manually only if
+  the database volume already existed before that migration was added.
 
-All sensitive logic (PIN hashing/verification via `pgcrypto`, consent writes, session
-creation) runs **inside the Mumbai database** through `SECURITY DEFINER` RPCs, so no
-personal data is processed outside India. Base tables have RLS enabled with no client
-policies — the browser can only call the granted RPCs, never read tables directly.
+The API is the only browser-facing database boundary. PIN hashing/verification and consent
+logic run through PostgreSQL functions; the browser never receives database credentials.
 
 ### Data model (matches the prototype)
+- `app_user` — one identity for every student, parent, headmaster, counsellor, and admin,
+  including role and preferred language.
+- `staff_profile`, `user_school`, `parent_student` — staff metadata, school access, and
+  parent-child relationships.
+- `student_profile`, `student_consent`, `student_preference` — detailed student data with
+  coarse age group and privacy/consent controls; no DOB is stored.
+- `student_assessment`, `student_support_event` — structured wellbeing responses and
+  audited support/referral events.
 - `child` — nickname (no legal name), `age_group` (no DOB), `pin_hash` (bcrypt), consent
   flags + timestamps, camera/voice opt-ins, PIN lockout counters.
 - `session` — per-child session number, status, band, red flag.
 - `audit_log` — `clinician_alert`, `clinician_alert_reoffer_shown`, etc.
+
+The API source is in `backend/main.py`, with Pydantic request validation in the same service.
+The local connection details and ERD are documented in `docs/ERD.md`.
 
 ## ARAM's voice (text-to-speech)
 
@@ -105,7 +115,7 @@ Frontend → **Cloudflare Pages** (or Netlify / Vercel), all free tier:
 - `public/_redirects` gives SPA fallback; `public/_headers` sets CSP + security headers.
 - Every push/branch gets a unique HTTPS URL — send it to seniors/owner; it opens on any
   phone, tablet, or laptop and is installable as a PWA. Static assets hold no PII, so a
-  global CDN is fine; personal data lives only in Supabase Mumbai.
+  global CDN is fine; personal data stays in the PostgreSQL deployment.
 
 ## Security & privacy (built in)
 
@@ -119,7 +129,7 @@ Frontend → **Cloudflare Pages** (or Netlify / Vercel), all free tier:
 
 ### Confirm before launch (compliance)
 - DPDP-compliant **verifiable** parental consent mechanism + retention policy + breach process.
-- Signed Supabase DPA / India-region guarantee for the government-school contract.
+- Hosting DPA / India-region guarantee for the government-school contract.
 - **Native Tamil review** of `src/i18n/ta.json` — current strings are a first pass. This now
   covers the rendered Tamil **audio** too: listen to every clip in `public/audio/ta/`.
 - Harden `create_child` / `verify_pin` against anonymous abuse (e.g. EMIS allow-list,
@@ -136,11 +146,12 @@ src/
   state/       onboardingStore.ts  (Zustand; secrets excluded from persistence)
   speech/      ISpeech.ts, webSpeech.ts (voice in)
                spokenKeys.ts, audioTts.ts, useSpeak.ts (voice out)
-  lib/         supabaseClient.ts, api.ts (mock + Supabase), greeting.ts
+  lib/         backendClient.ts, api.ts (mock + PostgreSQL API), greeting.ts
   flow.ts      route map + progress
   App.tsx      routes + consent guards
 public/audio/{en,ta}/*.mp3          rendered voice clips (see "ARAM's voice")
 scripts/render_tts.py               one-time IndicF5 render
-supabase/migrations/0001_init.sql   schema + RLS + RPCs
+supabase/migrations/*.sql           PostgreSQL schema + RLS + RPCs
+backend/main.py                     FastAPI + Pydantic API
 vercel.json                         SPA rewrite + security headers (Vercel ignores _headers)
 ```

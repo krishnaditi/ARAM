@@ -5,7 +5,7 @@ import Screen from '../components/Screen'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
 import { api, type ReturningContext } from '../lib/api'
-import { isBackendConfigured } from '../lib/supabaseClient'
+import { isBackendConfigured } from '../lib/backendClient'
 import { useGreeting } from '../lib/useGreeting'
 
 export default function S10Home() {
@@ -168,7 +168,7 @@ export default function S10Home() {
 
         {!isBackendConfigured && (
           <div className="dev-test-card">
-            <div className="dev-test-title">🧪 Test tools (mock backend only — hidden once Supabase is connected)</div>
+            <div className="dev-test-title">🧪 Test tools (mock backend only — hidden once PostgreSQL API is connected)</div>
             <div className="dev-test-sub">
               Nothing sets a real clinician alert yet — that comes from session content, which isn't built.
               Use this to test the S11 re-offer screen.

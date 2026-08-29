@@ -5,7 +5,8 @@ import Screen from '../components/Screen'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
 import { getFaceDescriptor, FACE_MATCH_THRESHOLD, descriptorDistance } from '../lib/faceApi'
-import { getStaffAccount, registerStaff, staffLabel, verifyStaffFace } from '../lib/staffAuth'
+import { getStaffAccount, registerStaff, registerStaffAccount, staffLabel, verifyStaffFace, verifyStaffFaceAccount } from '../lib/staffAuth'
+import { isBackendConfigured } from '../lib/backendClient'
 import { useCamera } from '../lib/useCamera'
 
 type StaffRegistrationRole = 'parent' | 'headmaster' | 'counsellor'
@@ -22,6 +23,7 @@ export default function StaffRegister() {
   const [busy, setBusy] = useState(false)
   const cam = useCamera()
   const setStaffSession = useOnboarding((s) => s.setStaffSession)
+  const language = useOnboarding((s) => s.language)
 
   const capture = async () => {
     const canvas = cam.captureCanvas()
@@ -35,7 +37,20 @@ export default function StaffRegister() {
         setMessage('No face detected. Please face the camera in good light and try again.')
         return
       }
-      if (!existing) {
+      if (isBackendConfigured) {
+        const match = await verifyStaffFaceAccount(role, Array.from(descriptor))
+        if (match.ok && match.display_name) {
+          setStaffSession(role, match.display_name, match.user_id)
+          nav(ROUTES.staffDashboard)
+          return
+        }
+        if (!name.trim()) {
+          setMessage('No account matched this face. Enter your name to register.')
+          return
+        }
+        const account = await registerStaffAccount(role, name, language, Array.from(descriptor))
+        setStaffSession(role, account.display_name, account.user_id)
+      } else if (!existing) {
         if (!name.trim()) {
           setMessage('Please enter your name before registering your face.')
           return

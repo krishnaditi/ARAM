@@ -1,15 +1,12 @@
-import { supabase, isBackendConfigured } from './supabaseClient'
+import { isBackendConfigured, post, backendRequest } from './backendClient'
 import { FACE_MATCH_THRESHOLD, descriptorDistance } from './faceApi'
 
 /**
  * Data-access layer for onboarding.
  *
- * When Supabase is configured, every sensitive operation goes through a Postgres
- * RPC that runs INSIDE the Mumbai (ap-south-1) database — PIN hashing/verification via
- * pgcrypto, consent writes, session creation — so no personal data is processed outside
- * India. When Supabase is NOT configured, a local mock stands in so the UI can be
- * reviewed on a preview URL before any backend exists. The mock is dev-only and clearly
- * not secure (PIN kept locally); it must never run against real student data.
+ * When the PostgreSQL API is configured, sensitive operations go through the FastAPI
+ * service and PostgreSQL RPCs — PIN hashing/verification via pgcrypto, consent writes,
+ * and session creation. When it is not configured, a local mock stands in for UI review.
  */
 
 export interface CreateChildInput {
@@ -50,63 +47,56 @@ export interface VerifyFaceResult {
   distance: number
 }
 
-// ─────────────────────────── Supabase-backed implementation ───────────────────────────
+export interface DashboardSummary {
+  students: number
+  sessions: number
+  alerts: number
+}
 
-async function sbCreateChild(input: CreateChildInput): Promise<{ childId: string }> {
-  const { data, error } = await supabase!.rpc('create_child', {
-    p_emis: input.emis,
-    p_language: input.language,
-    p_nickname: input.nickname,
-    p_age_group: input.ageGroup,
-    p_pin: input.pin,
+// ───────────────────────────── PostgreSQL API implementation ─────────────────────────
+
+async function remoteCreateChild(input: CreateChildInput): Promise<{ childId: string }> {
+  return post('/api/students', {
+    emis: input.emis,
+    language: input.language,
+    nickname: input.nickname,
+    age_group: input.ageGroup,
+    pin: input.pin,
   })
-  if (error) throw error
-  return { childId: data as string }
 }
 
 /** Writes both consents + opt-ins and creates SESSION #1 atomically (RPC enforces both consents). */
-async function sbFinalizeOnboarding(
+async function remoteFinalizeOnboarding(
   childId: string,
   consents: ConsentFlags,
 ): Promise<{ sessionId: string; sessionNumber: number }> {
-  const { data, error } = await supabase!.rpc('finalize_onboarding', {
-    p_child_id: childId,
-    p_parent_consent: consents.parentConsent,
-    p_child_assent: consents.childAssent,
-    p_camera_opt_in: consents.cameraOptIn,
-    p_voice_opt_in: consents.voiceOptIn,
+  const row = await post<{ session_id: string; session_number: number }>(`/api/students/${childId}/finalize`, {
+    parent_consent: consents.parentConsent,
+    child_assent: consents.childAssent,
+    camera_opt_in: consents.cameraOptIn,
+    voice_opt_in: consents.voiceOptIn,
   })
-  if (error) throw error
-  const row = data as { session_id: string; session_number: number }
   return { sessionId: row.session_id, sessionNumber: row.session_number }
 }
 
-async function sbVerifyPin(childId: string, pin: string): Promise<VerifyPinResult> {
-  const { data, error } = await supabase!.rpc('verify_pin', { p_child_id: childId, p_pin: pin })
-  if (error) throw error
-  const row = data as { ok: boolean; remaining_attempts: number; locked: boolean }
+async function remoteVerifyPin(childId: string, pin: string): Promise<VerifyPinResult> {
+  const row = await post<{ ok: boolean; remaining_attempts: number; locked: boolean }>(`/api/students/${childId}/verify-pin`, { pin })
   return { ok: row.ok, remainingAttempts: row.remaining_attempts, locked: row.locked }
 }
 
 /** Stores the 128-d face descriptor produced client-side by faceApi.ts. The RPC (not yet
  * written — see MEMORY) would keep it alongside the child row for verify_face to compare
  * against; only the descriptor crosses the wire, never the photo itself. */
-async function sbRegisterFace(childId: string, descriptor: number[]): Promise<void> {
-  const { error } = await supabase!.rpc('register_face', { p_child_id: childId, p_descriptor: descriptor })
-  if (error) throw error
+async function remoteRegisterFace(childId: string, descriptor: number[]): Promise<void> {
+  await post(`/api/students/${childId}/face`, { descriptor })
 }
 
-async function sbVerifyFace(childId: string, descriptor: number[]): Promise<VerifyFaceResult> {
-  const { data, error } = await supabase!.rpc('verify_face', { p_child_id: childId, p_descriptor: descriptor })
-  if (error) throw error
-  const row = data as { ok: boolean; distance: number }
-  return { ok: row.ok, distance: row.distance }
+async function remoteVerifyFace(childId: string, descriptor: number[]): Promise<VerifyFaceResult> {
+  return post<VerifyFaceResult>(`/api/students/${childId}/verify-face`, { descriptor })
 }
 
-async function sbGetReturningContext(childId: string): Promise<ReturningContext> {
-  const { data, error } = await supabase!.rpc('get_returning_context', { p_child_id: childId })
-  if (error) throw error
-  const r = data as Record<string, unknown>
+async function remoteGetReturningContext(childId: string): Promise<ReturningContext> {
+  const r = await backendRequest<Record<string, unknown>>(`/api/students/${childId}/context`)
   return {
     name: String(r.name ?? ''),
     daysSinceLast: Number(r.days_since_last ?? 0),
@@ -118,9 +108,12 @@ async function sbGetReturningContext(childId: string): Promise<ReturningContext>
   }
 }
 
-async function sbClearClinicianAlert(childId: string): Promise<void> {
-  const { error } = await supabase!.rpc('clear_clinician_alert', { p_child_id: childId })
-  if (error) throw error
+async function remoteClearClinicianAlert(childId: string): Promise<void> {
+  await post(`/api/students/${childId}/clear-alert`, {})
+}
+
+async function remoteDashboard(userId: string): Promise<DashboardSummary> {
+  return backendRequest<DashboardSummary>(`/api/users/${userId}/dashboard`)
 }
 
 // ─────────────────────────── Local mock (UI review only) ───────────────────────────
@@ -223,7 +216,7 @@ async function mockClearClinicianAlert(): Promise<void> {
  * Dev/test-only: mark the mock child as having a pending clinician alert, so the
  * S11 re-offer screen can be exercised without real session/mood-tracking content
  * (a separate, not-yet-built feature — that's what would set this for real, via an
- * `audit_log` row in Supabase). Never available when a real backend is configured.
+ * `audit_log` row in PostgreSQL). Never available when a real backend is configured.
  */
 async function mockSimulateClinicianAlert(): Promise<void> {
   const child = readMock()
@@ -237,19 +230,21 @@ async function mockSimulateClinicianAlert(): Promise<void> {
 
 export const api = {
   createChild: (input: CreateChildInput) =>
-    isBackendConfigured ? sbCreateChild(input) : mockCreateChild(input),
+    isBackendConfigured ? remoteCreateChild(input) : mockCreateChild(input),
   finalizeOnboarding: (childId: string, consents: ConsentFlags) =>
-    isBackendConfigured ? sbFinalizeOnboarding(childId, consents) : mockFinalizeOnboarding(),
+    isBackendConfigured ? remoteFinalizeOnboarding(childId, consents) : mockFinalizeOnboarding(),
   verifyPin: (childId: string, pin: string) =>
-    isBackendConfigured ? sbVerifyPin(childId, pin) : mockVerifyPin(childId, pin),
+    isBackendConfigured ? remoteVerifyPin(childId, pin) : mockVerifyPin(childId, pin),
   registerFace: (childId: string, descriptor: number[]) =>
-    isBackendConfigured ? sbRegisterFace(childId, descriptor) : mockRegisterFace(childId, descriptor),
+    isBackendConfigured ? remoteRegisterFace(childId, descriptor) : mockRegisterFace(childId, descriptor),
   verifyFace: (childId: string, descriptor: number[]) =>
-    isBackendConfigured ? sbVerifyFace(childId, descriptor) : mockVerifyFace(childId, descriptor),
+    isBackendConfigured ? remoteVerifyFace(childId, descriptor) : mockVerifyFace(childId, descriptor),
   getReturningContext: (childId: string) =>
-    isBackendConfigured ? sbGetReturningContext(childId) : mockGetReturningContext(),
+    isBackendConfigured ? remoteGetReturningContext(childId) : mockGetReturningContext(),
   clearClinicianAlert: (childId: string) =>
-    isBackendConfigured ? sbClearClinicianAlert(childId) : mockClearClinicianAlert(),
+    isBackendConfigured ? remoteClearClinicianAlert(childId) : mockClearClinicianAlert(),
+  dashboard: (userId: string) =>
+    isBackendConfigured ? remoteDashboard(userId) : Promise.resolve({ students: 0, sessions: 0, alerts: 0 }),
   /** Dev/test-only — see mockSimulateClinicianAlert(). No-op against a real backend. */
   devSimulateClinicianAlert: () =>
     isBackendConfigured ? Promise.resolve() : mockSimulateClinicianAlert(),
