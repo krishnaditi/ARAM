@@ -38,16 +38,22 @@ export default function S05bFaceRegister() {
     const canvas = cam.captureCanvas()
     if (!canvas) return
     setResult('detecting')
-    const descriptor = await getFaceDescriptor(canvas)
-    cam.stop()
-    if (!descriptor || !childId) {
-      setResult('noFace')
-      return
+    try {
+      const descriptor = await getFaceDescriptor(canvas)
+      cam.stop()
+      if (!descriptor || !childId) {
+        setResult('noFace')
+        return
+      }
+      await api.registerFace(childId, Array.from(descriptor))
+      setPhoto(canvas.toDataURL('image/jpeg', 0.85))
+      setFaceRegistered(true)
+      setResult('captured')
+    } catch {
+      cam.stop()
+      setResult('none')
+      cam.setStage('error')
     }
-    await api.registerFace(childId, Array.from(descriptor))
-    setPhoto(canvas.toDataURL('image/jpeg', 0.85))
-    setFaceRegistered(true)
-    setResult('captured')
   }
 
   const retry = () => {

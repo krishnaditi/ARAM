@@ -173,10 +173,14 @@ def verify_staff_face(payload: StaffCreate) -> dict[str, Any]:
             "FROM app_user WHERE role = %s::app_user_role AND is_active AND face_template IS NOT NULL",
             (payload.role,),
         ).fetchall()
-    for user_id, name, language, template in rows:
-        distance = descriptor_distance(template, payload.face_descriptor)
-        if distance < FACE_MATCH_THRESHOLD:
-            return {"ok": True, "user_id": str(user_id), "display_name": name, "language": language, "distance": distance}
+    best = min(
+        ((descriptor_distance(template, payload.face_descriptor), user_id, name, language) for user_id, name, language, template in rows),
+        default=None,
+        key=lambda match: match[0],
+    )
+    if best and best[0] < FACE_MATCH_THRESHOLD:
+        distance, user_id, name, language = best
+        return {"ok": True, "user_id": str(user_id), "display_name": name, "language": language, "distance": distance}
     return {"ok": False, "distance": math.inf}
 
 

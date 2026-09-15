@@ -93,18 +93,24 @@ export default function S09Login() {
     const canvas = cam.captureCanvas()
     if (!canvas || !childId) return
     setFaceResult('detecting')
-    const descriptor = await getFaceDescriptor(canvas)
-    cam.stop()
-    if (!descriptor) {
-      setFaceResult('noFace')
-      return
+    try {
+      const descriptor = await getFaceDescriptor(canvas)
+      cam.stop()
+      if (!descriptor) {
+        setFaceResult('noFace')
+        return
+      }
+      const res = await api.verifyFace(childId, Array.from(descriptor))
+      if (res.ok) {
+        await onUnlocked()
+        return
+      }
+      setFaceResult('mismatch')
+    } catch {
+      cam.stop()
+      setFaceResult('none')
+      cam.setStage('error')
     }
-    const res = await api.verifyFace(childId, Array.from(descriptor))
-    if (res.ok) {
-      await onUnlocked()
-      return
-    }
-    setFaceResult('mismatch')
   }
 
   const roleOptions: { role: StaffRole; icon: string }[] = [
