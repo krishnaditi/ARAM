@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import math
 import os
+from pathlib import Path
 from typing import Any, Literal
 
 import psycopg
+from dotenv import load_dotenv
 from psycopg.types.json import Jsonb
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+# Local runs read backend/.env; deployments (Render) supply the real environment,
+# which always wins because load_dotenv never overrides variables already set.
+load_dotenv(Path(__file__).parent / ".env")
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
