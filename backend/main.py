@@ -20,13 +20,18 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://aram:aram-local-only@localhost:5432/aram",
 )
+# Comma-separated so production can list the Vercel domain alongside localhost.
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+ALLOWED_ORIGINS = [origin.strip() for origin in FRONTEND_ORIGIN.split(",") if origin.strip()]
+# Vercel preview deployments get a fresh subdomain per push, so match them by pattern.
+PREVIEW_ORIGIN_REGEX = os.getenv("FRONTEND_ORIGIN_REGEX") or None
 FACE_MATCH_THRESHOLD = 0.6
 
 app = FastAPI(title="ARAM API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=PREVIEW_ORIGIN_REGEX,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
