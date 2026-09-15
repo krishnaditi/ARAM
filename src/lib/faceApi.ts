@@ -45,12 +45,16 @@ function loadFaceApiModule(): Promise<FaceApiModule> {
 // face-api's typings omit TF.js engine controls that exist at runtime.
 type TfEngine = {
   engine(): { reset(): void }
-  getBackend(): string
   setBackend(name: string): Promise<boolean>
-  ready(): Promise<void>
   backend(): { gpgpu?: { gl?: WebGLRenderingContext } }
 }
 const tfOf = (faceapi: FaceApiModule) => faceapi.tf as unknown as TfEngine
+
+// Without WebGL, TF.js picks its wasm backend, which the CSP blocks; CPU always works.
+async function useAvailableBackend(tf: TfEngine): Promise<void> {
+  if (await tf.setBackend('webgl').catch(() => false)) return
+  if (!(await tf.setBackend('cpu'))) throw new Error('No TF.js backend available')
+}
 
 let modelsLoaded: Promise<void> | null = null
 // A lost WebGL context hangs every later inference until the backend is rebuilt.
@@ -62,6 +66,7 @@ export function loadFaceModels(): Promise<void> {
   if (!modelsLoaded) {
     modelsLoaded = loadFaceApiModule()
       .then(async (faceapi) => {
+        await useAvailableBackend(tfOf(faceapi))
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -81,11 +86,7 @@ export function loadFaceModels(): Promise<void> {
 }
 
 async function resetFaceBackend(faceapi: FaceApiModule): Promise<void> {
-  const tf = tfOf(faceapi)
-  const backendName = tf.getBackend()
-  tf.engine().reset()
-  await tf.setBackend(backendName)
-  await tf.ready()
+  tfOf(faceapi).engine().reset()
   modelsLoaded = null
   await loadFaceModels()
 }
