@@ -20,6 +20,15 @@ export const FACE_MATCH_THRESHOLD = 0.6
 // used almost everywhere, so keeping the face-api.js import itself dynamic is what matters,
 // not whether the *caller* is dynamically imported.
 const INFERENCE_TIMEOUT_MS = 20_000
+// Tried in order: larger input and lower threshold catch small, dim, or soft faces.
+const DETECTOR_OPTIONS = [
+  { inputSize: 416, scoreThreshold: 0.5 },
+  { inputSize: 512, scoreThreshold: 0.4 },
+  { inputSize: 608, scoreThreshold: 0.35 },
+]
+// Fresh frames help when the capture tap shook the camera.
+const EXTRA_FRAMES = 2
+const EXTRA_FRAME_DELAY_MS = 300
 
 type FaceApiModule = typeof import('@vladmandic/face-api')
 let faceapiModule: Promise<FaceApiModule> | null = null
@@ -81,7 +90,11 @@ async function resetFaceBackend(faceapi: FaceApiModule): Promise<void> {
   await loadFaceModels()
 }
 
-async function detectOnce(faceapi: FaceApiModule, input: HTMLVideoElement | HTMLCanvasElement) {
+async function detectOnce(
+  faceapi: FaceApiModule,
+  input: HTMLVideoElement | HTMLCanvasElement,
+  options: { inputSize: number; scoreThreshold: number },
+) {
   await loadFaceModels()
   if (contextLost) throw new Error('WebGL context lost')
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -90,7 +103,7 @@ async function detectOnce(faceapi: FaceApiModule, input: HTMLVideoElement | HTML
   })
   try {
     const result = await Promise.race([
-      faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor(),
+      faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions(options)).withFaceLandmarks().withFaceDescriptor(),
       timeout,
     ])
     return result?.descriptor ?? null
@@ -99,18 +112,37 @@ async function detectOnce(faceapi: FaceApiModule, input: HTMLVideoElement | HTML
   }
 }
 
+async function detectInFrames(
+  faceapi: FaceApiModule,
+  input: HTMLVideoElement | HTMLCanvasElement,
+  nextFrame?: () => HTMLCanvasElement | null,
+) {
+  for (const options of DETECTOR_OPTIONS) {
+    const descriptor = await detectOnce(faceapi, input, options)
+    if (descriptor) return descriptor
+  }
+  for (let attempt = 0; attempt < EXTRA_FRAMES && nextFrame; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, EXTRA_FRAME_DELAY_MS))
+    const frame = nextFrame()
+    const descriptor = frame && (await detectOnce(faceapi, frame, DETECTOR_OPTIONS[1]))
+    if (descriptor) return descriptor
+  }
+  return null
+}
+
 /** Detects the single largest face in the given frame and returns its 128-d descriptor,
  * or null if no face was found. Models are loaded on demand if not already warm. */
 export async function getFaceDescriptor(
   input: HTMLVideoElement | HTMLCanvasElement,
+  nextFrame?: () => HTMLCanvasElement | null,
 ): Promise<Float32Array | null> {
   const faceapi = await loadFaceApiModule()
   try {
-    return await detectOnce(faceapi, input)
+    return await detectInFrames(faceapi, input, nextFrame)
   } catch {
     // Rebuild the backend and retry once; a second failure throws to the caller.
     await resetFaceBackend(faceapi)
-    return detectOnce(faceapi, input)
+    return detectInFrames(faceapi, input, nextFrame)
   }
 }
 

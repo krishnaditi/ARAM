@@ -94,7 +94,7 @@ export default function S09Login() {
     if (!canvas || !childId) return
     setFaceResult('detecting')
     try {
-      const descriptor = await getFaceDescriptor(canvas)
+      const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
       cam.stop()
       if (!descriptor) {
         setFaceResult('noFace')
@@ -275,7 +275,7 @@ export default function S09Login() {
                   className="sc-anim-4"
                   style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
                 >
-                  {faceResult === 'none' && (cam.stage === 'connecting' || cam.stage === 'streaming') && (
+                  {(faceResult === 'none' || faceResult === 'detecting') && (cam.stage === 'connecting' || cam.stage === 'streaming') && (
                     <>
                       <div className="face-camera-frame" style={{ width: '10rem', height: '10rem' }}>
                         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
@@ -292,7 +292,7 @@ export default function S09Login() {
                           <span className="note-card-icon">⏳</span>
                           <span>{t('s05b.startingCamera')}</span>
                         </div>
-                      ) : (
+                      ) : faceResult === 'none' && (
                         <div className="btn-row" style={{ width: '100%' }}>
                           <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>
                             {t('s09.cancelFace')}

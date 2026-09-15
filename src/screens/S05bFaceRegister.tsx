@@ -39,7 +39,7 @@ export default function S05bFaceRegister() {
     if (!canvas) return
     setResult('detecting')
     try {
-      const descriptor = await getFaceDescriptor(canvas)
+      const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
       cam.stop()
       if (!descriptor || !childId) {
         setResult('noFace')
@@ -73,7 +73,7 @@ export default function S05bFaceRegister() {
   }
 
   const canContinue = result === 'captured' || cam.stage === 'error'
-  const showCamera = result === 'none' && (cam.stage === 'connecting' || cam.stage === 'streaming')
+  const showCamera = (result === 'none' || result === 'detecting') && (cam.stage === 'connecting' || cam.stage === 'streaming')
 
   const footer = (
     <div className="btn-row">
@@ -143,7 +143,7 @@ export default function S05bFaceRegister() {
                   <span className="note-card-icon">⏳</span>
                   <span>{t('s05b.startingCamera')}</span>
                 </div>
-              ) : (
+              ) : result === 'none' && (
                 <button className="btn btn-primary" style={{ flex: 'none', width: '100%' }} onClick={() => void handleCapture()}>
                   📸 {t('s05b.captureNow')}
                 </button>

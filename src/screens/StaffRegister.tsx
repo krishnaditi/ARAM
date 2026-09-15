@@ -31,7 +31,7 @@ export default function StaffRegister() {
     setBusy(true)
     setMessage(null)
     try {
-      const descriptor = await getFaceDescriptor(canvas)
+      const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
       cam.stop()
       if (!descriptor) {
         setMessage('No face detected. Please face the camera in good light and try again.')
