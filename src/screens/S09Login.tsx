@@ -284,7 +284,7 @@ export default function S09Login() {
                           className="face-camera-video"
                           playsInline
                           muted
-                          onLoadedMetadata={() => cam.setStage('streaming')}
+                          onLoadedMetadata={cam.markStreaming}
                         />
                       </div>
                       {cam.stage === 'connecting' ? (

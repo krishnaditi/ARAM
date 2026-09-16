@@ -42,6 +42,8 @@ export default function S05bFaceRegister() {
       const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
       cam.stop()
       if (!descriptor || !childId) {
+        // Showing the frame that failed tells the child what to fix: dark, blurry, off-frame.
+        setPhoto(canvas.toDataURL('image/jpeg', 0.85))
         setResult('noFace')
         return
       }
@@ -92,7 +94,7 @@ export default function S05bFaceRegister() {
         <div className="sc">
           {!showCamera && result !== 'detecting' && (
             <div className="aram-logo-wrap sc-anim-1" style={{ marginBottom: 0 }}>
-              {result === 'captured' && photo ? (
+              {photo ? (
                 <img src={photo} alt="" className="face-capture-thumb" />
               ) : (
                 <div className="aram-logo-circle sc-float" style={{ fontSize: '2.8rem' }}>
@@ -135,7 +137,7 @@ export default function S05bFaceRegister() {
                   className="face-camera-video"
                   playsInline
                   muted
-                  onLoadedMetadata={() => cam.setStage('streaming')}
+                  onLoadedMetadata={cam.markStreaming}
                 />
               </div>
               {cam.stage === 'connecting' ? (

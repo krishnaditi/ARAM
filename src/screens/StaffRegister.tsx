@@ -112,7 +112,7 @@ export default function StaffRegister() {
           {showCamera ? (
             <div className="sc-anim-3" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
               <div className="face-camera-frame">
-                <video ref={cam.videoRef} className="face-camera-video" playsInline muted onLoadedMetadata={() => cam.setStage('streaming')} />
+                <video ref={cam.videoRef} className="face-camera-video" playsInline muted onLoadedMetadata={cam.markStreaming} />
               </div>
               {cam.stage === 'connecting' && <div className="note-card gray">Turning on your camera…</div>}
             </div>

@@ -10,6 +10,9 @@ export type CameraStage = 'idle' | 'connecting' | 'streaming' | 'error'
  * picks up 'connecting'/'streaming' — assigning srcObject inline right after
  * getUserMedia() resolves races against that mount and silently attaches to a null ref.
  */
+// A webcam reports its size before auto-exposure settles, so the first frames can be black.
+const WARMUP_MS = 900
+
 export function useCamera() {
   const [stage, setStage] = useState<CameraStage>('idle')
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
@@ -49,6 +52,11 @@ export function useCamera() {
     setStage('idle')
   }
 
+  /** Call from the video's onLoadedMetadata: holds "connecting" until frames are usable. */
+  const markStreaming = () => {
+    setTimeout(() => setStage((current) => (current === 'connecting' ? 'streaming' : current)), WARMUP_MS)
+  }
+
   /** Draws the current frame to a canvas, mirrored to match the mirrored live preview. */
   const captureCanvas = (): HTMLCanvasElement | null => {
     const video = videoRef.current
@@ -64,5 +72,5 @@ export function useCamera() {
     return canvas
   }
 
-  return { stage, setStage, videoRef, start, stop, captureCanvas }
+  return { stage, setStage, videoRef, start, stop, captureCanvas, markStreaming }
 }

@@ -20,11 +20,14 @@ export const FACE_MATCH_THRESHOLD = 0.6
 // used almost everywhere, so keeping the face-api.js import itself dynamic is what matters,
 // not whether the *caller* is dynamically imported.
 const INFERENCE_TIMEOUT_MS = 20_000
-// Tried in order: larger input and lower threshold catch small, dim, or soft faces.
-const DETECTOR_OPTIONS = [
-  { inputSize: 416, scoreThreshold: 0.5 },
-  { inputSize: 512, scoreThreshold: 0.4 },
-  { inputSize: 608, scoreThreshold: 0.35 },
+// Tried in order, cheapest first. Bigger input catches small faces; `pad` shrinks the frame
+// inside a grey border, which is what finds a close-up face filling the camera; SSD (a 5.6MB
+// download, so last) catches the rest. Each step alone misses cases the others handle.
+const DETECTOR_CHAIN: { tiny?: { inputSize: number; scoreThreshold: number }; ssd?: { minConfidence: number }; pad?: number }[] = [
+  { tiny: { inputSize: 416, scoreThreshold: 0.5 } },
+  { tiny: { inputSize: 608, scoreThreshold: 0.35 } },
+  { tiny: { inputSize: 512, scoreThreshold: 0.4 }, pad: 0.6 },
+  { ssd: { minConfidence: 0.3 } },
 ]
 // Fresh frames help when the capture tap shook the camera.
 const EXTRA_FRAMES = 2
@@ -91,20 +94,51 @@ async function resetFaceBackend(faceapi: FaceApiModule): Promise<void> {
   await loadFaceModels()
 }
 
+let ssdLoaded: Promise<void> | null = null
+function loadSsdModel(faceapi: FaceApiModule): Promise<void> {
+  if (!ssdLoaded) {
+    ssdLoaded = faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL).catch((error: unknown) => {
+      ssdLoaded = null
+      throw error
+    })
+  }
+  return ssdLoaded
+}
+
+function padFrame(input: HTMLVideoElement | HTMLCanvasElement, factor: number) {
+  const width = input instanceof HTMLVideoElement ? input.videoWidth : input.width
+  const height = input instanceof HTMLVideoElement ? input.videoHeight : input.height
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const context = canvas.getContext('2d')
+  if (!context || !width || !height) return null
+  context.fillStyle = '#808080'
+  context.fillRect(0, 0, width, height)
+  context.drawImage(input, (width * (1 - factor)) / 2, (height * (1 - factor)) / 2, width * factor, height * factor)
+  return canvas
+}
+
 async function detectOnce(
   faceapi: FaceApiModule,
   input: HTMLVideoElement | HTMLCanvasElement,
-  options: { inputSize: number; scoreThreshold: number },
+  step: (typeof DETECTOR_CHAIN)[number],
 ) {
   await loadFaceModels()
   if (contextLost) throw new Error('WebGL context lost')
+  if (step.ssd) await loadSsdModel(faceapi)
+  const frame = step.pad ? padFrame(input, step.pad) : input
+  if (!frame) return null
+  const options = step.ssd
+    ? new faceapi.SsdMobilenetv1Options(step.ssd)
+    : new faceapi.TinyFaceDetectorOptions(step.tiny)
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error('Face detection timed out')), INFERENCE_TIMEOUT_MS)
   })
   try {
     const result = await Promise.race([
-      faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions(options)).withFaceLandmarks().withFaceDescriptor(),
+      faceapi.detectSingleFace(frame, options).withFaceLandmarks().withFaceDescriptor(),
       timeout,
     ])
     return result?.descriptor ?? null
@@ -113,20 +147,51 @@ async function detectOnce(
   }
 }
 
+// Opt-in via ?facedebug=1 so a failing device can report what its camera actually captured.
+const faceDebug = typeof location !== 'undefined' && location.search.includes('facedebug=1')
+
+function logFrame(input: HTMLVideoElement | HTMLCanvasElement, label: string) {
+  if (!faceDebug) return
+  const width = input instanceof HTMLVideoElement ? input.videoWidth : input.width
+  const height = input instanceof HTMLVideoElement ? input.videoHeight : input.height
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+  if (!context || !width || !height) return console.warn(`[face] ${label}: no frame (${width}x${height})`)
+  context.drawImage(input, 0, 0)
+  const pixels = context.getImageData(0, 0, width, height).data
+  let sum = 0
+  let samples = 0
+  for (let i = 0; i < pixels.length; i += 4 * 101) {
+    sum += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3
+    samples++
+  }
+  console.warn(`[face] ${label}: ${width}x${height}, brightness ${(sum / samples).toFixed(0)}/255`)
+}
+
 async function detectInFrames(
   faceapi: FaceApiModule,
   input: HTMLVideoElement | HTMLCanvasElement,
   nextFrame?: () => HTMLCanvasElement | null,
 ) {
-  for (const options of DETECTOR_OPTIONS) {
-    const descriptor = await detectOnce(faceapi, input, options)
+  logFrame(input, 'captured frame')
+  for (const step of DETECTOR_CHAIN) {
+    const started = performance.now()
+    const descriptor = await detectOnce(faceapi, input, step)
+    if (faceDebug) {
+      console.warn(`[face] ${JSON.stringify(step)} -> ${descriptor ? 'FOUND' : 'none'} in ${Math.round(performance.now() - started)}ms`)
+    }
     if (descriptor) return descriptor
   }
+  // Fresh frames cost one cheap pass each: the tap may simply have blurred the first one.
   for (let attempt = 0; attempt < EXTRA_FRAMES && nextFrame; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, EXTRA_FRAME_DELAY_MS))
     const frame = nextFrame()
-    const descriptor = frame && (await detectOnce(faceapi, frame, DETECTOR_OPTIONS[1]))
-    if (descriptor) return descriptor
+    for (const step of DETECTOR_CHAIN.slice(0, 3)) {
+      const descriptor = frame && (await detectOnce(faceapi, frame, step))
+      if (descriptor) return descriptor
+    }
   }
   return null
 }
