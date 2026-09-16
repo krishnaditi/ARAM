@@ -36,12 +36,12 @@ export default function S05bFaceRegister() {
 
   const handleCapture = async () => {
     const canvas = cam.captureCanvas()
-    if (!canvas) return
+    if (!canvas || !childId) return
     setResult('detecting')
     try {
       const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
       cam.stop()
-      if (!descriptor || !childId) {
+      if (!descriptor) {
         // Showing the frame that failed tells the child what to fix: dark, blurry, off-frame.
         setPhoto(canvas.toDataURL('image/jpeg', 0.85))
         setResult('noFace')
@@ -72,6 +72,39 @@ export default function S05bFaceRegister() {
   const goBack = () => {
     cam.stop()
     nav(ROUTES.assent)
+  }
+
+  // A face can only be stored against a student record; without one this screen was reached
+  // out of order (opened directly, or after Logout cleared the device), so say that plainly
+  // rather than letting a capture fail and blaming the camera.
+  if (!childId) {
+    return (
+      <Screen
+        progress={progressFor(ROUTES.faceRegister)}
+        footer={
+          <div className="btn-row">
+            <button className="btn btn-back" onClick={() => nav(ROUTES.assent)}>
+              ← {t('common.back')}
+            </button>
+          </div>
+        }
+      >
+        <div className="bg-white">
+          <div className="sc" style={{ justifyContent: 'center', gap: '1.2rem' }}>
+            <div className="aram-logo-wrap sc-anim-1" style={{ marginBottom: 0 }}>
+              <div className="aram-logo-circle sc-float" style={{ fontSize: '2.8rem' }}>🤳</div>
+            </div>
+            <div className="note-card teal">
+              <span className="note-card-icon">ℹ️</span>
+              <span>No student profile on this device yet. Finish onboarding first, then you can add your face.</span>
+            </div>
+            <button className="btn btn-primary" onClick={() => nav(ROUTES.language)}>
+              Start onboarding →
+            </button>
+          </div>
+        </div>
+      </Screen>
+    )
   }
 
   const canContinue = result === 'captured' || cam.stage === 'error'
