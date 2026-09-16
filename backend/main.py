@@ -63,6 +63,17 @@ class FaceInput(BaseModel):
     descriptor: list[float] = Field(min_length=128, max_length=128)
 
 
+class ChildPinLogin(BaseModel):
+    nickname: str = Field(min_length=1, max_length=80)
+    pin: str = Field(pattern=r"^\d{4}$")
+    emis: str = ""
+
+
+class ChildFaceLogin(BaseModel):
+    descriptor: list[float] = Field(min_length=128, max_length=128)
+    emis: str = ""
+
+
 class StaffCreate(BaseModel):
     role: Role
     display_name: str = Field(min_length=1, max_length=120)
@@ -149,6 +160,25 @@ def clear_alert(child_id: str) -> dict[str, bool]:
     with db() as connection:
         connection.execute("SELECT clear_clinician_alert(%s)", (child_id,))
     return {"ok": True}
+
+
+@app.post("/api/students/login")
+def login_student(payload: ChildPinLogin) -> dict[str, Any]:
+    """Finds the child a nickname + PIN belongs to, for a device with no stored id."""
+    with db() as connection:
+        row = connection.execute(
+            "SELECT login_child_by_pin(%s, %s, %s)", (payload.nickname, payload.pin, payload.emis)
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/login-face")
+def login_student_by_face(payload: ChildFaceLogin) -> dict[str, Any]:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT login_child_by_face(%s::jsonb, %s)", (Jsonb(payload.descriptor), payload.emis)
+        ).fetchone()
+    return row[0]
 
 
 @app.post("/api/staff/register")

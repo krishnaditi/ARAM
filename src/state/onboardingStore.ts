@@ -88,6 +88,8 @@ interface OnboardingState {
   setSpeechOn: (v: boolean) => void
   markSpeechHintSeen: () => void
   commitChild: (childId: string, ageGroup: string) => void
+  /** Adopts an account this device has never seen, after a server-side login. */
+  adoptChild: (account: { childId: string; nickname: string; language: Language; ageGroup: string; faceRegistered: boolean }) => void
   clearSecrets: () => void
   unlock: () => void
   logout: () => void
@@ -151,6 +153,10 @@ export const useOnboarding = create<OnboardingState>()(
       markSpeechHintSeen: () => set({ speechHintSeen: true }),
       commitChild: (childId, ageGroup) =>
         set({ childId, ageGroup, dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
+      adoptChild: ({ childId, nickname, language, ageGroup, faceRegistered }) => {
+        applyLanguage(language)
+        set({ childId, nickname, language, ageGroup, faceRegistered, dob: { ...emptyDob }, pin: '', pinConfirm: '' })
+      },
       clearSecrets: () => set({ dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
       unlock: () => set({ unlocked: true }),
       logout: () => set({ unlocked: false }),

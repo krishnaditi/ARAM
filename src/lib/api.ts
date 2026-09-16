@@ -47,6 +47,17 @@ export interface VerifyFaceResult {
   distance: number
 }
 
+export interface ChildLoginResult {
+  ok: boolean
+  childId?: string
+  nickname?: string
+  language?: string
+  ageGroup?: string
+  faceRegistered?: boolean
+  /** 'invalid' | 'locked' | 'ambiguous' — only set when ok is false. */
+  reason?: string
+}
+
 export interface DashboardSummary {
   students: number
   sessions: number
@@ -67,6 +78,27 @@ async function remoteCreateChild(input: CreateChildInput): Promise<{ childId: st
 }
 
 /** Writes both consents + opt-ins and creates SESSION #1 atomically (RPC enforces both consents). */
+/** Finds an existing account from credentials alone, for a device that has no child_id. */
+async function remoteLoginWithPin(nickname: string, pin: string, emis: string): Promise<ChildLoginResult> {
+  return toLoginResult(await post('/api/students/login', { nickname, pin, emis }))
+}
+
+async function remoteLoginWithFace(descriptor: number[], emis: string): Promise<ChildLoginResult> {
+  return toLoginResult(await post('/api/students/login-face', { descriptor, emis }))
+}
+
+function toLoginResult(row: Record<string, unknown>): ChildLoginResult {
+  if (!row.ok) return { ok: false, reason: String(row.reason ?? 'invalid') }
+  return {
+    ok: true,
+    childId: String(row.child_id),
+    nickname: String(row.nickname ?? ''),
+    language: String(row.language ?? 'en'),
+    ageGroup: String(row.age_group ?? ''),
+    faceRegistered: Boolean(row.face_registered),
+  }
+}
+
 async function remoteFinalizeOnboarding(
   childId: string,
   consents: ConsentFlags,
@@ -232,6 +264,10 @@ async function mockSimulateClinicianAlert(): Promise<void> {
 export const api = {
   createChild: (input: CreateChildInput) =>
     isBackendConfigured ? remoteCreateChild(input) : mockCreateChild(input),
+  loginWithPin: (nickname: string, pin: string, emis = ''): Promise<ChildLoginResult> =>
+    isBackendConfigured ? remoteLoginWithPin(nickname, pin, emis) : Promise.resolve({ ok: false, reason: 'invalid' }),
+  loginWithFace: (descriptor: number[], emis = ''): Promise<ChildLoginResult> =>
+    isBackendConfigured ? remoteLoginWithFace(descriptor, emis) : Promise.resolve({ ok: false, reason: 'invalid' }),
   finalizeOnboarding: (childId: string, consents: ConsentFlags) =>
     isBackendConfigured ? remoteFinalizeOnboarding(childId, consents) : mockFinalizeOnboarding(),
   verifyPin: (childId: string, pin: string) =>
