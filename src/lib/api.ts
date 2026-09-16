@@ -56,13 +56,14 @@ export interface DashboardSummary {
 // ───────────────────────────── PostgreSQL API implementation ─────────────────────────
 
 async function remoteCreateChild(input: CreateChildInput): Promise<{ childId: string }> {
-  return post('/api/students', {
+  const row = await post<{ child_id: string }>('/api/students', {
     emis: input.emis,
     language: input.language,
     nickname: input.nickname,
     age_group: input.ageGroup,
     pin: input.pin,
   })
+  return { childId: row.child_id }
 }
 
 /** Writes both consents + opt-ins and creates SESSION #1 atomically (RPC enforces both consents). */
