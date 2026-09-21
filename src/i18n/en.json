@@ -150,7 +150,15 @@
     "detecting": "Checking for a face…",
     "noFaceDetected": "We couldn't see a face clearly. Try again with more light, facing the camera.",
     "registered": "Face registered! You can use it to log in next time.",
-    "note": "This step is part of setting up your space. If it doesn't work on this device, your PIN always works."
+    "note": "Everyone needs this step to set up their space. If the camera won't work, ask a teacher and they can let you through.",
+      "reviewFlagged": "We couldn't be completely sure about that photo, so we haven't saved it. Your space is ready and your PIN will let you in. A staff member will check this later.",
+      "overrideCta": "Ask a teacher to help me",
+      "overridePrompt": "Ask a teacher, warden or counsellor to look at the camera. They can let you through this step.",
+      "overrideCapture": "Staff: look at the camera",
+      "overrideGranted": "Thanks, {{name}}. You can carry on now.",
+      "overrideFailed": "We couldn't recognise a staff face. Please ask them to try again in better light.",
+      "duplicateFound": "It looks like you already have an ARAM space. A face can only belong to one account, so we can't register it twice.",
+      "duplicateSignIn": "That's me — take me to sign in"
   },
   "s06": {
     "title": "Can we use your camera?",

@@ -159,10 +159,41 @@ def verify_pin(child_id: str, payload: PinInput) -> dict[str, Any]:
 
 
 @app.post("/api/students/{child_id}/face")
-def register_student_face(child_id: str, payload: FaceInput) -> dict[str, bool]:
+def register_student_face(child_id: str, payload: FaceInput) -> dict[str, Any]:
+    """Stores the descriptor unless it already belongs to another active account.
+
+    A duplicate comes back as an ordinary 200 with ok=false, not an error status: the
+    child-facing screen has to explain it gently and offer a way forward, and a 4xx
+    would reach the client as a thrown exception with no structure to branch on.
+    """
     with db() as connection:
-        connection.execute("SELECT register_face(%s, %s::jsonb)", (child_id, Jsonb(payload.descriptor)))
-    return {"ok": True}
+        row = connection.execute(
+            "SELECT register_face(%s, %s::jsonb)", (child_id, Jsonb(payload.descriptor))
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/{child_id}/face-override")
+def override_face_step(child_id: str, payload: FaceInput) -> dict[str, Any]:
+    """Lets a headmaster, counsellor or admin authorise a child past the mandatory face
+    step — for a camera that will not start, or a child the matcher wrongly refuses.
+    The descriptor is the STAFF member's, matched at the strict block threshold; nothing
+    is stored against the child except an audit row naming who authorised it."""
+    with db() as connection:
+        row = connection.execute(
+            "SELECT authorise_face_skip(%s, %s::jsonb)", (child_id, Jsonb(payload.descriptor))
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/{child_id}/discard")
+def discard_student(child_id: str) -> dict[str, Any]:
+    """Removes an onboarding record that never completed — used when the face check
+    finds the child already has an account. The RPC refuses to touch anything that has
+    consent on record or any session history, whatever id is passed in."""
+    with db() as connection:
+        row = connection.execute("SELECT discard_unfinished_child(%s)", (child_id,)).fetchone()
+    return row[0]
 
 
 @app.post("/api/students/{child_id}/verify-face")
@@ -243,11 +274,18 @@ def save_cluster_selection(session_id: str, payload: ClusterSelection) -> dict[s
 def register_staff(payload: StaffCreate) -> dict[str, Any]:
     if payload.role == "admin":
         raise HTTPException(status_code=400, detail="Use admin login for admin accounts")
-    with db() as connection:
-        row = connection.execute(
-            "SELECT create_staff_user(%s::app_user_role, %s, %s, NULL, NULL, %s::jsonb)",
-            (payload.role, payload.display_name, payload.language, Jsonb(payload.face_descriptor)),
-        ).fetchone()
+    try:
+        with db() as connection:
+            row = connection.execute(
+                "SELECT create_staff_user(%s::app_user_role, %s, %s, NULL, NULL, %s::jsonb)",
+                (payload.role, payload.display_name, payload.language, Jsonb(payload.face_descriptor)),
+            ).fetchone()
+    except psycopg.errors.UniqueViolation as error:
+        # create_staff_user raises 23505 when the face already belongs to an account,
+        # in any role — including a student one.
+        raise HTTPException(
+            status_code=409, detail="That face is already registered to another account"
+        ) from error
     return {"user_id": str(row[0]), "display_name": payload.display_name}
 
 
