@@ -12,7 +12,15 @@ const MODEL_URL = '/models'
 
 // Euclidean distance below this is treated as the same person. 0.6 is face-api.js's own
 // documented default threshold, tuned against its recognition model's training data.
+// It is a VERIFICATION threshold: one comparison, "is this the child who claims to be X".
 export const FACE_MATCH_THRESHOLD = 0.6
+
+// Stricter threshold for IDENTIFICATION — searching for a face among many, where every
+// stored face is another chance to match the wrong person and the false matches add up
+// with the size of the search. Used to decide when a duplicate is certain enough to
+// refuse an account, and to decide when a staff face is certain enough to override the
+// face step. Mirrors face_block_threshold() in the database, which is the authority.
+export const FACE_BLOCK_THRESHOLD = 0.45
 
 // @vladmandic/face-api pulls in TF.js (~1.4MB) — dynamically imported so that chunk only
 // ever loads on the two screens that actually use it (S05b, S09), instead of every screen

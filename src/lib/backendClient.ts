@@ -9,7 +9,16 @@ export async function backendRequest<T>(path: string, options?: RequestInit): Pr
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   })
   if (!response.ok) {
-    const detail = await response.text()
+    // FastAPI sends {"detail": "..."} — unwrap it so screens can show the server's own
+    // sentence instead of a blob of JSON. Anything else is passed through as-is.
+    const body = await response.text()
+    let detail = body
+    try {
+      const parsed = JSON.parse(body) as { detail?: unknown }
+      if (typeof parsed.detail === 'string') detail = parsed.detail
+    } catch {
+      // Not JSON. The raw body is the best message available.
+    }
     throw new Error(detail || `API request failed: ${response.status}`)
   }
   return response.json() as Promise<T>

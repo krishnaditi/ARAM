@@ -8,15 +8,32 @@ import { useCamera } from '../lib/useCamera'
 import { getFaceDescriptor, loadFaceModels } from '../lib/faceApi'
 import { api } from '../lib/api'
 
-type ResultStage = 'none' | 'detecting' | 'captured' | 'noFace'
+type ResultStage = 'none' | 'detecting' | 'captured' | 'noFace' | 'duplicate' | 'review'
+
+/** The staff-authorisation side-flow, which borrows the same camera. */
+type OverrideStage = 'off' | 'camera' | 'verifying' | 'granted' | 'failed'
 
 /**
- * Registers a face using the device's real camera. There is still no face-match backend
- * (same "hardcode for now" approach as the EMIS lookup on S02c) — face detection and the
- * 128-d descriptor comparison both run on-device (see lib/faceApi.ts); only the descriptor
- * is handed to api.registerFace, never the photo, the way a real capture + template store
- * would after matching. The photo itself is kept in memory only for the on-screen preview
+ * Registers a face using the device's real camera. Face detection and the 128-d descriptor
+ * are computed on-device (see lib/faceApi.ts); only the descriptor is handed to
+ * api.registerFace, never the photo. The photo is kept in memory for the on-screen preview
  * and is never persisted or uploaded, same spirit as DOB/PIN in the onboarding store.
+ *
+ * One face, one account. This step is REQUIRED — an optional check closes nothing — and
+ * the server answers in three bands, because face matching is a statistical guess and
+ * treating every guess as certain would refuse real children an account:
+ *
+ *   ok: false           near-certain match. Stop. Either they already have a space and
+ *                       should sign in, or a staff member has to let them through.
+ *   ok, review: true    borderline. Nothing is stored, the child carries on with their
+ *                       PIN, and staff get an audit row to resolve later. Storing a
+ *                       borderline face would make face LOGIN ambiguous, and signing the
+ *                       wrong child into someone else's history is the worse failure.
+ *   ok, stored: true    no match. Registered normally.
+ *
+ * Because the step is required, it will sometimes stand between a real child and an
+ * account — a camera that will not start, a face the matcher refuses. The staff override
+ * is the way past, and it costs a staff face to open, so it cannot be self-declared.
  */
 export default function S05bFaceRegister() {
   const nav = useNavigate()
@@ -24,9 +41,13 @@ export default function S05bFaceRegister() {
   const childId = useOnboarding((s) => s.childId)
   const faceRegistered = useOnboarding((s) => s.faceRegistered)
   const setFaceRegistered = useOnboarding((s) => s.setFaceRegistered)
+  const reset = useOnboarding((s) => s.reset)
   const cam = useCamera()
   const [result, setResult] = useState<ResultStage>(faceRegistered ? 'captured' : 'none')
   const [photo, setPhoto] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [override, setOverride] = useState<OverrideStage>('off')
+  const [overrideStaff, setOverrideStaff] = useState<string>('')
 
   // Warms up the (~7MB) recognition model in the background as soon as this screen opens,
   // so the wait lands during camera setup instead of after the child taps Capture.
@@ -47,8 +68,19 @@ export default function S05bFaceRegister() {
         setResult('noFace')
         return
       }
-      await api.registerFace(childId, Array.from(descriptor))
+      const stored = await api.registerFace(childId, Array.from(descriptor))
       setPhoto(canvas.toDataURL('image/jpeg', 0.85))
+      if (!stored.ok) {
+        setFaceRegistered(false)
+        setResult('duplicate')
+        return
+      }
+      if (stored.review) {
+        // Borderline: deliberately not stored, but onboarding is not stopped.
+        setFaceRegistered(false)
+        setResult('review')
+        return
+      }
       setFaceRegistered(true)
       setResult('captured')
     } catch {
@@ -68,6 +100,53 @@ export default function S05bFaceRegister() {
   const goNext = () => {
     cam.stop()
     nav(ROUTES.camera)
+  }
+
+  // "That's me." The account created back on S03 is the duplicate, so it goes, and the
+  // device is wiped back to a clean slate before being handed to the login screen —
+  // otherwise it would still hold a childId pointing at a row that no longer exists.
+  const goSignIn = async () => {
+    cam.stop()
+    setBusy(true)
+    try {
+      if (childId) await api.discardAccount(childId)
+    } finally {
+      reset()
+      nav(ROUTES.login)
+    }
+  }
+
+  // The staff override. Deliberately NOT something the child can assert on their own:
+  // it takes a headmaster, counsellor or admin face, matched at the strict threshold,
+  // and it records who authorised it.
+  const startOverride = () => {
+    setPhoto(null)
+    setResult('none')
+    setOverride('camera')
+    void cam.start()
+  }
+
+  const captureOverride = async () => {
+    const canvas = cam.captureCanvas()
+    if (!canvas || !childId) return
+    setOverride('verifying')
+    try {
+      const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
+      if (!descriptor) {
+        setOverride('failed')
+        return
+      }
+      const granted = await api.overrideFaceStep(childId, Array.from(descriptor))
+      if (!granted.ok) {
+        setOverride('failed')
+        return
+      }
+      cam.stop()
+      setOverrideStaff(granted.staffName ?? '')
+      setOverride('granted')
+    } catch {
+      setOverride('failed')
+    }
   }
   const goBack = () => {
     cam.stop()
@@ -107,15 +186,23 @@ export default function S05bFaceRegister() {
     )
   }
 
-  const canContinue = result === 'captured' || cam.stage === 'error'
-  const showCamera = (result === 'none' || result === 'detecting') && (cam.stage === 'connecting' || cam.stage === 'streaming')
+  // A camera error is no longer a free pass — the step is required. The only ways past
+  // are a stored face, a borderline result the server chose not to store, or staff.
+  const canContinue = result === 'captured' || result === 'review' || override === 'granted'
+  const overrideCamera = override === 'camera' || override === 'verifying'
+  const showCamera =
+    (cam.stage === 'connecting' || cam.stage === 'streaming') &&
+    (overrideCamera || (override === 'off' && (result === 'none' || result === 'detecting')))
+  /** Offered whenever the child is stuck. Safe to show freely: it needs a staff face. */
+  const offerOverride =
+    override === 'off' && !canContinue && !showCamera && result !== 'detecting'
 
   const footer = (
     <div className="btn-row">
       <button className="btn btn-back" onClick={goBack}>
         ← {t('common.back')}
       </button>
-      <button className="btn btn-next" disabled={!canContinue} onClick={goNext}>
+      <button className="btn btn-next" disabled={!canContinue || busy} onClick={goNext}>
         {t('common.continue')} →
       </button>
     </div>
@@ -178,6 +265,21 @@ export default function S05bFaceRegister() {
                   <span className="note-card-icon">⏳</span>
                   <span>{t('s05b.startingCamera')}</span>
                 </div>
+              ) : overrideCamera ? (
+                <>
+                  <div className="note-card gray">
+                    <span className="note-card-icon">🧑‍🏫</span>
+                    <span>{t('s05b.overridePrompt')}</span>
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 'none', width: '100%' }}
+                    disabled={override === 'verifying'}
+                    onClick={() => void captureOverride()}
+                  >
+                    📸 {t('s05b.overrideCapture')}
+                  </button>
+                </>
               ) : result === 'none' && (
                 <button className="btn btn-primary" style={{ flex: 'none', width: '100%' }} onClick={() => void handleCapture()}>
                   📸 {t('s05b.captureNow')}
@@ -205,6 +307,49 @@ export default function S05bFaceRegister() {
             </div>
           )}
 
+          {result === 'duplicate' && (
+            <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div className="note-card pink">
+                <span className="note-card-icon">🙂</span>
+                <span>{t('s05b.duplicateFound')}</span>
+              </div>
+              <button className="btn btn-primary" disabled={busy} onClick={() => void goSignIn()}>
+                {t('s05b.duplicateSignIn')} →
+              </button>
+            </div>
+          )}
+
+          {result === 'review' && (
+            <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div className="note-card teal">
+                <span className="note-card-icon">ℹ️</span>
+                <span>{t('s05b.reviewFlagged')}</span>
+              </div>
+              <button className="btn btn-outline" onClick={retry}>
+                🔄 {t('s05b.retake')}
+              </button>
+            </div>
+          )}
+
+          {override === 'granted' && (
+            <div className="note-card green sc-anim-4">
+              <span className="note-card-icon">✅</span>
+              <span>{t('s05b.overrideGranted', { name: overrideStaff })}</span>
+            </div>
+          )}
+
+          {override === 'failed' && (
+            <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div className="note-card pink">
+                <span className="note-card-icon">⚠️</span>
+                <span>{t('s05b.overrideFailed')}</span>
+              </div>
+              <button className="btn btn-outline" onClick={startOverride}>
+                {t('s05b.tryAgain')}
+              </button>
+            </div>
+          )}
+
           {result === 'noFace' && (
             <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div className="note-card pink">
@@ -217,7 +362,7 @@ export default function S05bFaceRegister() {
             </div>
           )}
 
-          {result === 'none' && cam.stage === 'error' && (
+          {override === 'off' && cam.stage === 'error' && (
             <div className="sc-anim-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div className="note-card pink">
                 <span className="note-card-icon">⚠️</span>
@@ -227,6 +372,12 @@ export default function S05bFaceRegister() {
                 {t('s05b.tryAgain')}
               </button>
             </div>
+          )}
+
+          {offerOverride && (
+            <button className="btn btn-outline sc-anim-5" onClick={startOverride}>
+              🧑‍🏫 {t('s05b.overrideCta')}
+            </button>
           )}
 
           <div className="note-card gray sc-anim-5">

@@ -1,5 +1,5 @@
 import { isBackendConfigured, post, backendRequest } from './backendClient'
-import { FACE_MATCH_THRESHOLD, descriptorDistance } from './faceApi'
+import { FACE_BLOCK_THRESHOLD, FACE_MATCH_THRESHOLD, descriptorDistance } from './faceApi'
 import type { FlagLevel } from '../data/clusters'
 
 /**
@@ -39,6 +39,32 @@ export interface VerifyPinResult {
   ok: boolean
   remainingAttempts: number
   locked: boolean
+}
+
+export interface RegisterFaceResult {
+  /** False only for the block band: a near-certain match, and onboarding must stop. */
+  ok: boolean
+  /** False when a borderline match meant the face was deliberately NOT stored. */
+  stored?: boolean
+  /** True for the review band: the child carries on with a PIN, staff are notified. */
+  review?: boolean
+  /** 'duplicate' — the descriptor already belongs to another active account. */
+  reason?: string
+  /** Role of the account it matched: 'student', 'counsellor', … Never a name or an id. */
+  existingRole?: string
+}
+
+export interface FaceOverrideResult {
+  ok: boolean
+  /** Name of the staff member whose face authorised the skip. */
+  staffName?: string
+}
+
+export interface DiscardAccountResult {
+  ok: boolean
+  /** False when there was nothing to remove; 'finalised' when the account is real. */
+  removed?: boolean
+  reason?: string
 }
 
 export interface VerifyFaceResult {
@@ -152,11 +178,37 @@ async function remoteVerifyPin(childId: string, pin: string): Promise<VerifyPinR
   return { ok: row.ok, remainingAttempts: row.remaining_attempts, locked: row.locked }
 }
 
-/** Stores the 128-d face descriptor produced client-side by faceApi.ts. The RPC (not yet
- * written — see MEMORY) would keep it alongside the child row for verify_face to compare
- * against; only the descriptor crosses the wire, never the photo itself. */
-async function remoteRegisterFace(childId: string, descriptor: number[]): Promise<void> {
-  await post(`/api/students/${childId}/face`, { descriptor })
+/** Stores the 128-d face descriptor produced client-side by faceApi.ts — only the
+ * descriptor crosses the wire, never the photo itself. The RPC refuses a descriptor
+ * that already belongs to another active account, in any school and any role, so a
+ * `{ok: false, reason: 'duplicate'}` answer here is an ordinary outcome, not a failure. */
+async function remoteRegisterFace(childId: string, descriptor: number[]): Promise<RegisterFaceResult> {
+  const r = await post<Record<string, unknown>>(`/api/students/${childId}/face`, { descriptor })
+  return {
+    ok: Boolean(r.ok),
+    stored: Boolean(r.stored),
+    review: Boolean(r.review),
+    reason: r.reason ? String(r.reason) : undefined,
+    existingRole: r.existing_role ? String(r.existing_role) : undefined,
+  }
+}
+
+/** Staff authorisation to pass the mandatory face step. `descriptor` is the STAFF
+ *  member's face, not the child's. */
+async function remoteOverrideFaceStep(childId: string, descriptor: number[]): Promise<FaceOverrideResult> {
+  const r = await post<Record<string, unknown>>(`/api/students/${childId}/face-override`, { descriptor })
+  return { ok: Boolean(r.ok), staffName: r.staff_name ? String(r.staff_name) : undefined }
+}
+
+/** Removes an onboarding record that never completed. The RPC refuses to touch an
+ *  account with consent on record or any session history. */
+async function remoteDiscardAccount(childId: string): Promise<DiscardAccountResult> {
+  const r = await post<Record<string, unknown>>(`/api/students/${childId}/discard`, {})
+  return {
+    ok: Boolean(r.ok),
+    removed: Boolean(r.removed),
+    reason: r.reason ? String(r.reason) : undefined,
+  }
 }
 
 async function remoteVerifyFace(childId: string, descriptor: number[]): Promise<VerifyFaceResult> {
@@ -283,11 +335,63 @@ async function mockVerifyPin(_childId: string, pin: string): Promise<VerifyPinRe
   writeMock(child)
   return { ok: false, remainingAttempts: remaining, locked: child.locked }
 }
-async function mockRegisterFace(_childId: string, descriptor: number[]): Promise<void> {
+/**
+ * The mock only ever holds one child, so it keeps a separate little registry of the
+ * faces it has seen — otherwise there is no way to exercise the duplicate-account
+ * path without a real database. Dev/UI-review only; it lives in the same localStorage
+ * the mock child already uses, and never runs when the PostgreSQL API is configured.
+ */
+const MOCK_FACES_KEY = 'aram.mock.faces'
+interface MockFace {
+  childId: string
+  descriptor: number[]
+}
+function readMockFaces(): MockFace[] {
+  const raw = localStorage.getItem(MOCK_FACES_KEY)
+  return raw ? (JSON.parse(raw) as MockFace[]) : []
+}
+
+async function mockRegisterFace(childId: string, descriptor: number[]): Promise<RegisterFaceResult> {
+  const faces = readMockFaces()
+  // Same two bands as the RPC. The mock holds one device's faces, so there is no
+  // school to scope by — every stored face is in scope.
+  const nearest = faces
+    .filter((f) => f.childId !== childId)
+    .map((f) => descriptorDistance(f.descriptor, descriptor))
+    .sort((x, y) => x - y)[0]
+  if (nearest !== undefined && nearest < FACE_BLOCK_THRESHOLD) {
+    return { ok: false, stored: false, review: false, reason: 'duplicate', existingRole: 'student' }
+  }
+  if (nearest !== undefined && nearest < FACE_MATCH_THRESHOLD) {
+    return { ok: true, stored: false, review: true }
+  }
+
   const child = readMock()
-  if (!child) return
-  child.faceDescriptor = descriptor
-  writeMock(child)
+  if (child) {
+    child.faceDescriptor = descriptor
+    writeMock(child)
+  }
+  localStorage.setItem(
+    MOCK_FACES_KEY,
+    JSON.stringify([...faces.filter((f) => f.childId !== childId), { childId, descriptor }]),
+  )
+  return { ok: true, stored: true, review: false }
+}
+
+/** No staff faces on the mock, so the override always succeeds — it exists so the
+ *  screen's override path can be walked during UI review. */
+async function mockOverrideFaceStep(): Promise<FaceOverrideResult> {
+  return { ok: true, staffName: 'Staff (mock)' }
+}
+
+async function mockDiscardAccount(childId: string): Promise<DiscardAccountResult> {
+  localStorage.setItem(
+    MOCK_FACES_KEY,
+    JSON.stringify(readMockFaces().filter((f) => f.childId !== childId)),
+  )
+  const child = readMock()
+  if (child?.childId === childId) localStorage.removeItem(MOCK_KEY)
+  return { ok: true, removed: true }
 }
 
 async function mockVerifyFace(_childId: string, descriptor: number[]): Promise<VerifyFaceResult> {
@@ -357,8 +461,12 @@ export const api = {
     isBackendConfigured ? remoteFinalizeOnboarding(childId, consents) : mockFinalizeOnboarding(),
   verifyPin: (childId: string, pin: string) =>
     isBackendConfigured ? remoteVerifyPin(childId, pin) : mockVerifyPin(childId, pin),
-  registerFace: (childId: string, descriptor: number[]) =>
+  registerFace: (childId: string, descriptor: number[]): Promise<RegisterFaceResult> =>
     isBackendConfigured ? remoteRegisterFace(childId, descriptor) : mockRegisterFace(childId, descriptor),
+  overrideFaceStep: (childId: string, staffDescriptor: number[]): Promise<FaceOverrideResult> =>
+    isBackendConfigured ? remoteOverrideFaceStep(childId, staffDescriptor) : mockOverrideFaceStep(),
+  discardAccount: (childId: string): Promise<DiscardAccountResult> =>
+    isBackendConfigured ? remoteDiscardAccount(childId) : mockDiscardAccount(childId),
   verifyFace: (childId: string, descriptor: number[]) =>
     isBackendConfigured ? remoteVerifyFace(childId, descriptor) : mockVerifyFace(childId, descriptor),
   getReturningContext: (childId: string) =>

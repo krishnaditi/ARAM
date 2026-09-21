@@ -64,9 +64,16 @@ export default function StaffRegister() {
         setStaffSession(role, existing.name)
       }
       nav(ROUTES.staffDashboard)
-    } catch {
+    } catch (error) {
       cam.stop()
-      setMessage('We could not use the camera right now. Please try again.')
+      // fetch rejects with a TypeError when the request never reached the server; any
+      // other Error here carries the API's own explanation — most usefully the 409 for
+      // a face that already belongs to an account, in any role.
+      setMessage(
+        error instanceof Error && !(error instanceof TypeError)
+          ? error.message
+          : 'We could not use the camera right now. Please try again.',
+      )
     } finally {
       setBusy(false)
     }
