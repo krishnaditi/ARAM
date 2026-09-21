@@ -4,6 +4,7 @@ import VoiceControls from './VoiceControls'
 import { useAutoSpeak } from '../speech/useSpeak'
 import { useLogout } from '../lib/useLogout'
 import { useOnboarding } from '../state/onboardingStore'
+import DevStateOverlay from './DevStateOverlay'
 
 interface ScreenProps {
   /** 0–100 progress bar. Omit to hide the bar. */
@@ -53,6 +54,8 @@ export default function Screen({ progress, footer, children, hideLogout, bodyCla
         <div className={`app-body${bodyClass ? ' ' + bodyClass : ''}`}>{children}</div>
         {footer && <div className="app-footer">{footer}</div>}
       </div>
+      {/* Renders nothing unless debug is switched on for this device. */}
+      <DevStateOverlay />
     </div>
   )
 }

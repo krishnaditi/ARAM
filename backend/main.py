@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import contextlib
+import logging
 import math
 import os
+import time
 from pathlib import Path
 from typing import Any, Literal
 
 import psycopg
 from dotenv import load_dotenv
 from psycopg.types.json import Jsonb
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -27,7 +30,26 @@ ALLOWED_ORIGINS = [origin.strip() for origin in FRONTEND_ORIGIN.split(",") if or
 PREVIEW_ORIGIN_REGEX = os.getenv("FRONTEND_ORIGIN_REGEX") or None
 FACE_MATCH_THRESHOLD = 0.6
 
-app = FastAPI(title="ARAM API", version="0.1.0")
+# Anything slower than this is logged at WARNING so it stands out in the Render log.
+SLOW_REQUEST_MS = 2000.0
+# Wall-clock at import. A request arriving when this process is only a few seconds old
+# was served by a container that had just booted — i.e. a cold start, which on Render's
+# free plan happens after ~15 minutes of no traffic and costs the caller 30-60 seconds.
+PROCESS_STARTED_AT = time.time()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger("aram.api")
+
+
+@contextlib.asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Marks the boot in the Render log, so a cold start shows up as an event rather
+    than having to be inferred from a gap in the timestamps."""
+    logger.info("ARAM API started (cold start) - pid %s", os.getpid())
+    yield
+
+
+app = FastAPI(title="ARAM API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -35,7 +57,41 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
+    # Without this the browser hides Server-Timing from the page's own scripts, so the
+    # client-side log below could only ever measure the round trip, never the split.
+    expose_headers=["Server-Timing"],
 )
+
+
+@app.middleware("http")
+async def record_timing(request: Request, call_next):
+    """Times every request and hands the number back to the browser.
+
+    `Server-Timing` is rendered natively by Chrome DevTools (Network > Timing), so this
+    turns "the app feels slow" into a server-vs-network split with nothing to install.
+    `uptime` is the useful one for this deployment: if it reads a few seconds while the
+    request was slow, the container had just cold-started and the code is not at fault.
+    """
+    started = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    uptime_s = time.time() - PROCESS_STARTED_AT
+
+    response.headers["Server-Timing"] = (
+        f'app;dur={elapsed_ms:.1f};desc="handler", uptime;dur={uptime_s * 1000:.0f};desc="process age"'
+    )
+    # Cross-origin callers (Vercel -> Render) only get detailed Resource Timing, and a
+    # readable Server-Timing in DevTools, when the server allows it.
+    response.headers["Timing-Allow-Origin"] = "*"
+
+    line = "%s %s -> %s in %.0fms (uptime %.0fs)"
+    args = (request.method, request.url.path, response.status_code, elapsed_ms, uptime_s)
+    if elapsed_ms >= SLOW_REQUEST_MS:
+        logger.warning(line + " SLOW", *args)
+    else:
+        logger.info(line, *args)
+    return response
+
 
 Role = Literal["parent", "headmaster", "counsellor", "admin"]
 

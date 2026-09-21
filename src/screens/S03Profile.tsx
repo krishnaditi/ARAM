@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
@@ -13,9 +13,24 @@ export default function S03Profile() {
   const s = useOnboarding()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  /** Set once the wait stops looking like a tap that didn't register. */
+  const [slow, setSlow] = useState(false)
   // S03 is reached either straight from the EMIS lookup (TN govt school) or straight
   // from the schoolType "No" branch — back should return to wherever they actually came from.
   const backRoute = s.isTNGovtSchool ? ROUTES.emis : ROUTES.schoolType
+
+  // Creating the account is the first time this app talks to the API, and on a free-tier
+  // host that request can wait out a container cold start. A child watching a dimmed
+  // button for forty seconds has every reason to think the app has died, so after a few
+  // seconds we say what is happening instead of leaving them to guess.
+  useEffect(() => {
+    if (!busy) {
+      setSlow(false)
+      return
+    }
+    const timer = setTimeout(() => setSlow(true), 4000)
+    return () => clearTimeout(timer)
+  }, [busy])
 
   const onNext = async () => {
     setError(null)
@@ -37,8 +52,13 @@ export default function S03Profile() {
       // Persist childId + ageGroup; wipe DOB/PIN from memory immediately.
       s.commitChild(childId, ageGroup)
       nav(ROUTES.parentConsent)
-    } catch {
-      setError(t('s03.errDob'))
+    } catch (err) {
+      // This used to report errDob for EVERY failure, so a network timeout or a cold
+      // start told the child their date of birth was wrong and sent them off correcting
+      // a field that was already right. The validation above has already passed by this
+      // point: anything thrown here came from the request, not from what they typed.
+      console.error('[aram] createChild failed', err)
+      setError(t('s03.errSaveFailed'))
       setBusy(false)
     }
   }
@@ -51,12 +71,25 @@ export default function S03Profile() {
           <span>{error}</span>
         </div>
       )}
+      {busy && slow && (
+        <div className="note-card teal">
+          <span className="note-card-icon">⏳</span>
+          <span>{t('s03.stillWorking')}</span>
+        </div>
+      )}
       <div className="btn-row">
-        <button className="btn btn-back" onClick={() => nav(backRoute)}>
+        <button className="btn btn-back" onClick={() => nav(backRoute)} disabled={busy}>
           ← {t('common.back')}
         </button>
-        <button className="btn btn-next" onClick={onNext} disabled={busy}>
-          {t('common.next')} →
+        <button className="btn btn-next" onClick={onNext} disabled={busy} aria-busy={busy}>
+          {busy ? (
+            <>
+              <span className="btn-spinner" aria-hidden="true" />
+              {t('s03.creating')}
+            </>
+          ) : (
+            <>{t('common.next')} →</>
+          )}
         </button>
       </div>
     </>

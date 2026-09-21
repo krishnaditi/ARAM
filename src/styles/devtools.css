@@ -1,0 +1,141 @@
+/* ═══ DEBUG OVERLAY ═══
+   Diagnostic UI only. Never rendered unless isDebugOverlayEnabled() says so — see
+   lib/devTools.ts. Kept in its own file so it is trivial to drop later. */
+
+.dbg-fab {
+  position: fixed;
+  left: 0.8rem;
+  bottom: 0.8rem;
+  z-index: 900;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(20, 20, 24, 0.75);
+  color: #fff;
+  font-size: 1.6rem;
+  cursor: pointer;
+  opacity: 0.55;
+}
+.dbg-fab:hover {
+  opacity: 1;
+}
+
+.dbg-panel {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 950;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d0f;
+  color: #ddd;
+  border-top: 2px solid #9b6ee0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (min-width: 700px) {
+  .dbg-panel {
+    inset: auto 1.2rem 1.2rem auto;
+    width: 46rem;
+    max-height: 60vh;
+    border: 1px solid #2a2a30;
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+}
+
+.dbg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.2rem;
+  background: #16161a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #9b6ee0;
+  flex-shrink: 0;
+}
+.dbg-x {
+  background: none;
+  border: none;
+  color: #777;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.dbg-body {
+  overflow-y: auto;
+  padding: 1rem 1.2rem 1.4rem;
+}
+.dbg-sec {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #55555f;
+}
+.dbg-row {
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.2rem 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+.dbg-k {
+  color: #7f7f8c;
+  min-width: 11rem;
+  flex-shrink: 0;
+}
+.dbg-v {
+  color: #e6e6ea;
+  word-break: break-all;
+}
+.dbg-v.warn {
+  color: #fac775;
+}
+.dbg-empty {
+  font-size: 1.05rem;
+  color: #55555f;
+  font-style: italic;
+}
+.dbg-call {
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  font-size: 1.05rem;
+  border-bottom: 1px solid #1a1a1f;
+}
+.dbg-call-ms {
+  color: #5dcaa5;
+  min-width: 6rem;
+  flex-shrink: 0;
+  text-align: right;
+}
+.dbg-call.slow .dbg-call-ms {
+  color: #f09595;
+  font-weight: 700;
+}
+.dbg-call-path {
+  color: #c9c9d2;
+  flex: 1;
+  word-break: break-all;
+}
+.dbg-call-meta {
+  color: #6a6a76;
+  flex-shrink: 0;
+}
+.dbg-wipe {
+  margin-top: 1.4rem;
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 0.7rem;
+  border: 1px solid #501313;
+  background: #1a0d0d;
+  color: #f09595;
+  font-family: inherit;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.dbg-wipe:hover {
+  background: #2a1212;
+}

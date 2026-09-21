@@ -94,6 +94,9 @@
     "confirmPin": "Confirm PIN",
     "pinNote": "This PIN is only to keep your space private",
     "errPinMismatch": "The two PINs don't match. Please try again.",
+      "creating": "Creating your space…",
+      "stillWorking": "Still working — this can take a little longer the first time today. Nothing you typed is lost.",
+      "errSaveFailed": "I couldn't save your details just now. Please check your connection and try again — nothing you typed is lost.",
     "errPinLength": "Please enter a 4-digit PIN.",
     "errNickname": "Please tell me what to call you.",
     "errDob": "Please enter a valid date of birth."

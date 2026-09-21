@@ -1327,3 +1327,28 @@
   width: 100%;
   font-family: inherit;
 }
+
+/* Inline button spinner — for a control that stays put while it waits, rather than
+   dimming and leaving the person to wonder whether their tap registered. */
+@keyframes btnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.btn-spinner {
+  display: inline-block;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-right: 0.7rem;
+  vertical-align: -0.2rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btnSpin 0.7s linear infinite;
+  opacity: 0.85;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-spinner {
+    animation-duration: 2.5s;
+  }
+}
