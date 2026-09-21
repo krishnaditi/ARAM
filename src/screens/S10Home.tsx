@@ -68,15 +68,9 @@ export default function S10Home() {
   return (
     <Screen hideLogout>
       <div className="bg-home">
-        <button
-          type="button"
-          className="back-icon-btn"
-          onClick={() => nav(-1)}
-          aria-label={t('common.back')}
-          title={t('common.back')}
-        >
-          ←
-        </button>
+        {/* No back arrow here on purpose: the dashboard is where a signed-in child
+            starts, so there is nothing behind it to go back to. nav(-1) would have
+            walked them into the PIN screen they just came through. */}
         <div className="content-col">
         <div className="ret-header sc-anim-1">
           <div className="ret-avatar">{avatarInitial}</div>
