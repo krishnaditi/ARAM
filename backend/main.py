@@ -74,6 +74,32 @@ class ChildFaceLogin(BaseModel):
     emis: str = ""
 
 
+class ClusterFlagItem(BaseModel):
+    """One confirmed basket item. `issue_id` is the CANONICAL taxonomy id, so a
+    cross-listed item cannot produce two rows; `entry_sub_id` records where the
+    child actually tapped it, for browse-path analysis only."""
+
+    issue_id: str = Field(min_length=1, max_length=64)
+    cluster_id: str = Field(min_length=1, max_length=64)
+    sub_id: str = Field(min_length=1, max_length=64)
+    entry_sub_id: str | None = Field(default=None, max_length=64)
+    feeling_tags: list[str] = Field(default_factory=list, max_length=20)
+    flag: Literal["amber", "red"] | None = None
+    free_text: str | None = Field(default=None, max_length=2000)
+    priority_rank: int = Field(ge=1, le=10)
+
+
+class ClusterSelection(BaseModel):
+    items: list[ClusterFlagItem] = Field(min_length=1, max_length=10)
+
+
+class SafeguardFlagInput(BaseModel):
+    issue_id: str = Field(min_length=1, max_length=64)
+    severity: Literal["amber", "red"]
+    cluster_id: str | None = Field(default=None, max_length=64)
+    sub_id: str | None = Field(default=None, max_length=64)
+
+
 class StaffCreate(BaseModel):
     role: Role
     display_name: str = Field(min_length=1, max_length=120)
@@ -177,6 +203,38 @@ def login_student_by_face(payload: ChildFaceLogin) -> dict[str, Any]:
     with db() as connection:
         row = connection.execute(
             "SELECT login_child_by_face(%s::jsonb, %s)", (Jsonb(payload.descriptor), payload.emis)
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/{child_id}/sessions")
+def start_session(child_id: str) -> dict[str, Any]:
+    """Opens a SESSION for this sitting — the child has just entered C01."""
+    with db() as connection:
+        row = connection.execute("SELECT start_session(%s)", (child_id,)).fetchone()
+    result = row[0]
+    return {"session_id": result["session_id"], "session_number": result["session_number"]}
+
+
+@app.post("/api/sessions/{session_id}/safeguard-flag")
+def raise_safeguard_flag(session_id: str, payload: SafeguardFlagInput) -> dict[str, Any]:
+    """Amber and red disclosures are written the moment they are made, never batched
+    with the basket — a child who then backs out has still disclosed."""
+    with db() as connection:
+        row = connection.execute(
+            "SELECT raise_safeguard_flag(%s, %s, %s, %s, %s)",
+            (session_id, payload.issue_id, payload.severity, payload.cluster_id, payload.sub_id),
+        ).fetchone()
+    return {"flag_id": str(row[0])}
+
+
+@app.post("/api/sessions/{session_id}/cluster-flags")
+def save_cluster_selection(session_id: str, payload: ClusterSelection) -> dict[str, Any]:
+    """The confirmed basket, written as one CLUSTER_FLAG row per canonical issue id."""
+    items = [item.model_dump() for item in payload.items]
+    with db() as connection:
+        row = connection.execute(
+            "SELECT save_cluster_selection(%s, %s::jsonb)", (session_id, Jsonb(items))
         ).fetchone()
     return row[0]
 
