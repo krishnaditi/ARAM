@@ -93,7 +93,10 @@ export default function SessionFrame({
   }
 
   return (
-    <Screen progress={progress} bodyClass="app-body-fixed">
+    // No logout here: the chat header's ✕ already ends the session, and offering two
+    // different ways out of the same screen only makes a child hesitate over which one
+    // loses their work.
+    <Screen progress={progress} bodyClass="app-body-fixed" hideLogout>
       <div className="chat-screen">
         <div className="chat-head">
           <div className="chat-av">💜</div>

@@ -12,8 +12,9 @@ interface ScreenProps {
   footer?: ReactNode
   children: ReactNode
   /** Suppresses the header Logout control on a screen that is signed in but should
-   *  still not offer it — S10, which renders its own logout, and the login screens,
-   *  where it would make no sense even if a staff session happened to be open. */
+   *  still not offer it — S10, which renders its own logout; the login screens, where it
+   *  would make no sense even if a staff session happened to be open; and the session
+   *  chat, which ends itself with the ✕ in its own header. */
   hideLogout?: boolean
   /** Extra class on the body. The chat screens pass `app-body-fixed`: they own their
    *  own scroll area, and a second scrollbar here would carry the composer off-screen. */
