@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
+import { useSession } from '../state/sessionStore'
 import { api, type ReturningContext } from '../lib/api'
 import { isBackendConfigured } from '../lib/backendClient'
 import { useGreeting } from '../lib/useGreeting'
@@ -15,10 +16,12 @@ export default function S10Home() {
   const childId = useOnboarding((s) => s.childId)
   const storedName = useOnboarding((s) => s.nickname)
   const logout = useOnboarding((s) => s.logout)
+  const resetSession = useSession((s) => s.resetSession)
   const [ctx, setCtx] = useState<ReturningContext | null>(null)
 
   const onLogout = () => {
     if (window.confirm(t('common.logoutConfirm'))) {
+      resetSession()
       logout()
       nav(ROUTES.login)
     }
@@ -109,7 +112,7 @@ export default function S10Home() {
           <div className="today-label">
             <span className="today-label-icon">💬</span> {t('s10.todayLabel')}
           </div>
-          <button className="session-btn sc-glow" onClick={() => nav(ROUTES.emergency)}>
+          <button className="session-btn sc-glow" onClick={() => nav(ROUTES.cluster)}>
             <div className="session-btn-icon">🌈</div>
             <div>
               <div className="session-btn-title">{t('s10.startSession')}</div>

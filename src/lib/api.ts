@@ -1,5 +1,6 @@
 import { isBackendConfigured, post, backendRequest } from './backendClient'
 import { FACE_MATCH_THRESHOLD, descriptorDistance } from './faceApi'
+import type { FlagLevel } from '../data/clusters'
 
 /**
  * Data-access layer for onboarding.
@@ -62,6 +63,40 @@ export interface DashboardSummary {
   students: number
   sessions: number
   alerts: number
+}
+
+export interface StartedSession {
+  sessionId: string
+  sessionNumber: number
+}
+
+/** One confirmed basket item, ready to become a CLUSTER_FLAG row. */
+export interface ClusterFlagItem {
+  /** Canonical issue id, or `free_<subId>_<n>`. */
+  issueId: string
+  clusterId: string
+  subId: string
+  /** Where the child tapped it — browse-path analysis only, never counts. */
+  entrySubId: string
+  emotions: string[]
+  flag: FlagLevel
+  free: boolean
+  freeText?: string
+  rank: number
+}
+
+export interface SafeguardFlagInput {
+  sessionId: string | null
+  issueId: string
+  severity: 'amber' | 'red'
+  clusterId: string | null
+  subId: string | null
+}
+
+export interface ClusterSelectionInput {
+  sessionId: string | null
+  childId: string | null
+  items: ClusterFlagItem[]
 }
 
 // ───────────────────────────── PostgreSQL API implementation ─────────────────────────
@@ -147,6 +182,43 @@ async function remoteClearClinicianAlert(childId: string): Promise<void> {
 
 async function remoteDashboard(userId: string): Promise<DashboardSummary> {
   return backendRequest<DashboardSummary>(`/api/users/${userId}/dashboard`)
+}
+
+/** Opens a SESSION row for this sitting. Called when the child enters C01. */
+async function remoteStartSession(childId: string): Promise<StartedSession> {
+  const row = await post<{ session_id: string; session_number: number }>(
+    `/api/students/${childId}/sessions`,
+    {},
+  )
+  return { sessionId: row.session_id, sessionNumber: row.session_number }
+}
+
+/** Amber and red disclosures are written the moment they are made, never batched. */
+async function remoteRaiseSafeguardFlag(input: SafeguardFlagInput): Promise<void> {
+  if (!input.sessionId) return
+  await post(`/api/sessions/${input.sessionId}/safeguard-flag`, {
+    issue_id: input.issueId,
+    severity: input.severity,
+    cluster_id: input.clusterId,
+    sub_id: input.subId,
+  })
+}
+
+/** All CLUSTER_FLAG rows for the confirmed basket, written in one transaction. */
+async function remoteSaveClusterSelection(input: ClusterSelectionInput): Promise<void> {
+  if (!input.sessionId) return
+  await post(`/api/sessions/${input.sessionId}/cluster-flags`, {
+    items: input.items.map((i) => ({
+      issue_id: i.issueId,
+      cluster_id: i.clusterId,
+      sub_id: i.subId,
+      entry_sub_id: i.entrySubId,
+      feeling_tags: i.emotions,
+      flag: i.flag === false ? null : i.flag,
+      free_text: i.free ? (i.freeText ?? '') : null,
+      priority_rank: i.rank,
+    })),
+  })
 }
 
 // ─────────────────────────── Local mock (UI review only) ───────────────────────────
@@ -237,6 +309,19 @@ async function mockGetReturningContext(): Promise<ReturningContext> {
     clinicianAlertPending: child?.clinicianAlertPending ?? false,
   }
 }
+let mockSessionNumber = 0
+async function mockStartSession(): Promise<StartedSession> {
+  mockSessionNumber += 1
+  return { sessionId: mockUuid(), sessionNumber: mockSessionNumber }
+}
+
+/**
+ * Cluster-selection writes are deliberately dropped by the mock. Everything here is
+ * a child's disclosure; persisting it to localStorage on a shared review device would
+ * be worse than losing it. The dev drawer's audit log is where to watch the flow.
+ */
+async function mockDropSafeguardWrite(): Promise<void> {}
+
 async function mockClearClinicianAlert(): Promise<void> {
   const child = readMock()
   if (child) {
@@ -282,6 +367,12 @@ export const api = {
     isBackendConfigured ? remoteClearClinicianAlert(childId) : mockClearClinicianAlert(),
   dashboard: (userId: string) =>
     isBackendConfigured ? remoteDashboard(userId) : Promise.resolve({ students: 0, sessions: 0, alerts: 0 }),
+  startSession: (childId: string) =>
+    isBackendConfigured ? remoteStartSession(childId) : mockStartSession(),
+  raiseSafeguardFlag: (input: SafeguardFlagInput) =>
+    isBackendConfigured ? remoteRaiseSafeguardFlag(input) : mockDropSafeguardWrite(),
+  saveClusterSelection: (input: ClusterSelectionInput) =>
+    isBackendConfigured ? remoteSaveClusterSelection(input) : mockDropSafeguardWrite(),
   /** Dev/test-only — see mockSimulateClinicianAlert(). No-op against a real backend. */
   devSimulateClinicianAlert: () =>
     isBackendConfigured ? Promise.resolve() : mockSimulateClinicianAlert(),

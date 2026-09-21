@@ -11,10 +11,13 @@ interface ScreenProps {
   children: ReactNode
   /** Hides the header Logout control. Only S01 (nothing to log out of yet) sets this. */
   hideLogout?: boolean
+  /** Extra class on the body. The chat screens pass `app-body-fixed`: they own their
+   *  own scroll area, and a second scrollbar here would carry the composer off-screen. */
+  bodyClass?: string
 }
 
 /** The device-framed app column: progress bar, scrollable body, sticky footer. */
-export default function Screen({ progress, footer, children, hideLogout }: ScreenProps) {
+export default function Screen({ progress, footer, children, hideLogout, bodyClass }: ScreenProps) {
   // Every screen renders <Screen>, so voice is driven from the route map in spokenKeys.ts
   // rather than wired into each screen by hand. Logout works the same way, so every screen
   // gets it without having to wire it in individually.
@@ -38,7 +41,7 @@ export default function Screen({ progress, footer, children, hideLogout }: Scree
             <div className="app-progress-fill" style={{ width: `${progress}%` }} />
           </div>
         )}
-        <div className="app-body">{children}</div>
+        <div className={`app-body${bodyClass ? ' ' + bodyClass : ''}`}>{children}</div>
         {footer && <div className="app-footer">{footer}</div>}
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '../flow'
 import { useOnboarding } from '../state/onboardingStore'
+import { useSession } from '../state/sessionStore'
 
 /**
  * Shared "Logout" behavior, rendered once from <Screen> so every screen gets it for free.
@@ -17,6 +18,9 @@ export function useLogout(): () => void {
   const reset = useOnboarding((s) => s.reset)
   const staffUnlocked = useOnboarding((s) => s.staffUnlocked)
   const clearStaffSession = useOnboarding((s) => s.clearStaffSession)
+  // Anything left in the cluster basket belongs to the child who is leaving, so it
+  // goes with them — but only once they have actually confirmed the logout.
+  const resetSession = useSession((s) => s.resetSession)
 
   return () => {
     if (staffUnlocked) {
@@ -26,10 +30,12 @@ export function useLogout(): () => void {
     }
     if (unlocked) {
       if (!window.confirm(t('common.logoutConfirm'))) return
+      resetSession()
       logout()
       nav(ROUTES.login)
     } else {
       if (!window.confirm(t('common.startOverConfirm'))) return
+      resetSession()
       reset()
       nav(ROUTES.welcome)
     }
