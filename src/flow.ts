@@ -18,7 +18,20 @@ export const ROUTES = {
   emergency: '/emergency', // always-available helpline
   staffRegister: '/staff-register',
   staffDashboard: '/staff-dashboard',
+
+  // Cluster selection (C01–C06), entered from "Start session" on S10. The cluster
+  // and sub-cluster ids live in the URL so Back works and a screen can be linked to.
+  cluster: '/session/cluster', // C01 which part of life
+  subcluster: '/session/cluster/:clusterId', // C02 which part of that
+  issues: '/session/cluster/:clusterId/:subId', // C03 what is happening
+  basket: '/session/basket', // C05 review + C06 confirm
+  redEmergency: '/session/red/:issueId', // RED immediate-risk path
 } as const
+
+export const subclusterPath = (clusterId: string) => `/session/cluster/${clusterId}`
+export const issuesPath = (clusterId: string, subId: string) =>
+  `/session/cluster/${clusterId}/${subId}`
+export const redEmergencyPath = (issueId: string) => `/session/red/${encodeURIComponent(issueId)}`
 
 /** Linear new-user step order, used to compute progress and next/back. The EMIS step is
  * skipped for non-TN-government schools, so progress simply jumps two steps at once there. */

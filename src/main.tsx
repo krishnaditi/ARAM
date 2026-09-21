@@ -4,6 +4,7 @@ import './i18n'
 import './styles/tokens.css'
 import './styles/globals.css'
 import './styles/screens.css'
+import './styles/session.css'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(

@@ -21,6 +21,11 @@ import S11Reoffer from './screens/S11Reoffer'
 import Emergency from './screens/Emergency'
 import StaffRegister from './screens/StaffRegister'
 import StaffDashboard from './screens/StaffDashboard'
+import ClusterSelection from './screens/ClusterSelection'
+import SubclusterSelection from './screens/SubclusterSelection'
+import IssueSelection from './screens/IssueSelection'
+import BasketReview from './screens/BasketReview'
+import RedEmergency from './screens/RedEmergency'
 
 /** New/returning-user split: a device with a CHILD record starts at PIN login,
  * unless this session is already unlocked, in which case go straight home. */
@@ -99,6 +104,46 @@ export default function App() {
           element={
             <RequireAccount>
               <S11Reoffer />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.cluster}
+          element={
+            <RequireAccount>
+              <ClusterSelection />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.subcluster}
+          element={
+            <RequireAccount>
+              <SubclusterSelection />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.issues}
+          element={
+            <RequireAccount>
+              <IssueSelection />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.basket}
+          element={
+            <RequireAccount>
+              <BasketReview />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.redEmergency}
+          element={
+            <RequireAccount>
+              <RedEmergency />
             </RequireAccount>
           }
         />
