@@ -14,6 +14,7 @@ export const ROUTES = {
   login: '/login', // S09 PIN login (returning)
   loginLanguage: '/login-language',
   home: '/home', // S10 returning home
+  myProfile: '/my-details', // the child's own record, reached from the dashboard avatar
   reoffer: '/reoffer', // S11 clinician-alert re-offer
   emergency: '/emergency', // always-available helpline
   staffRegister: '/staff-register',

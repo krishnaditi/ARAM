@@ -73,7 +73,15 @@ export default function S10Home() {
             walked them into the PIN screen they just came through. */}
         <div className="content-col">
         <div className="ret-header sc-anim-1">
-          <div className="ret-avatar">{avatarInitial}</div>
+          <button
+            type="button"
+            className="ret-avatar ret-avatar-btn"
+            onClick={() => nav(ROUTES.myProfile)}
+            aria-label={t('profile.title')}
+            title={t('profile.title')}
+          >
+            {avatarInitial}
+          </button>
           <div className="ret-greeting-block">
             <div className="ret-greeting">
               {g.icon} {t('s10.greetingLine', { greeting: g.text, name })} 👋

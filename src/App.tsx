@@ -17,6 +17,7 @@ import S08Summary from './screens/S08Summary'
 import S09Login from './screens/S09Login'
 import LoginLanguage from './screens/LoginLanguage'
 import S10Home from './screens/S10Home'
+import MyProfile from './screens/MyProfile'
 import S11Reoffer from './screens/S11Reoffer'
 import Emergency from './screens/Emergency'
 import StaffRegister from './screens/StaffRegister'
@@ -96,6 +97,14 @@ export default function App() {
           element={
             <RequireAccount>
               <S10Home />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.myProfile}
+          element={
+            <RequireAccount>
+              <MyProfile />
             </RequireAccount>
           }
         />

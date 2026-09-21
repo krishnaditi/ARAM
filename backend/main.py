@@ -156,6 +156,29 @@ class SafeguardFlagInput(BaseModel):
     sub_id: str | None = Field(default=None, max_length=64)
 
 
+class NicknameInput(BaseModel):
+    nickname: str = Field(min_length=1, max_length=80)
+
+
+class PinChangeInput(BaseModel):
+    """Identity challenge for a PIN change.
+
+    The date of birth is NOT sent — the device derives the age band from it exactly as
+    it does at signup, and only the band travels. Nickname and band are friction; the
+    current PIN is the control.
+    """
+
+    nickname: str = Field(min_length=1, max_length=80)
+    age_group: str = Field(min_length=1, max_length=20)
+    current_pin: str = Field(pattern=r"^\d{4}$")
+    new_pin: str = Field(pattern=r"^\d{4}$")
+
+
+class OptInsInput(BaseModel):
+    camera_opt_in: bool
+    voice_opt_in: bool
+
+
 class StaffCreate(BaseModel):
     role: Role
     display_name: str = Field(min_length=1, max_length=120)
@@ -225,6 +248,44 @@ def register_student_face(child_id: str, payload: FaceInput) -> dict[str, Any]:
     with db() as connection:
         row = connection.execute(
             "SELECT register_face(%s, %s::jsonb)", (child_id, Jsonb(payload.descriptor))
+        ).fetchone()
+    return row[0]
+
+
+@app.get("/api/students/{child_id}/profile")
+def student_profile(child_id: str) -> dict[str, Any]:
+    with db() as connection:
+        row = connection.execute("SELECT get_child_profile(%s)", (child_id,)).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/{child_id}/nickname")
+def rename_student(child_id: str, payload: NicknameInput) -> dict[str, Any]:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT update_child_nickname(%s, %s)", (child_id, payload.nickname)
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/{child_id}/pin")
+def change_student_pin(child_id: str, payload: PinChangeInput) -> dict[str, Any]:
+    """A wrong current PIN counts against the same 3-attempt lockout budget as login,
+    so this cannot be used as an unlimited oracle for guessing it."""
+    with db() as connection:
+        row = connection.execute(
+            "SELECT change_child_pin(%s, %s, %s, %s, %s)",
+            (child_id, payload.nickname, payload.age_group, payload.current_pin, payload.new_pin),
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/{child_id}/optins")
+def update_student_optins(child_id: str, payload: OptInsInput) -> dict[str, Any]:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT update_child_optins(%s, %s, %s)",
+            (child_id, payload.camera_opt_in, payload.voice_opt_in),
         ).fetchone()
     return row[0]
 

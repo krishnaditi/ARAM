@@ -35,6 +35,38 @@ export interface ReturningContext {
   clinicianAlertPending: boolean
 }
 
+export interface ChildProfile {
+  nickname: string
+  ageGroup: string
+  language: string
+  schoolId: string
+  parentConsent: boolean
+  childAssent: boolean
+  cameraOptIn: boolean
+  voiceOptIn: boolean
+  locked: boolean
+  faceRegistered: boolean
+  sessions: number
+  createdAt: string
+}
+
+export interface PinChangeInput {
+  /** Must match the stored nickname. */
+  nickname: string
+  /** Derived on the device from the DOB the child typed; the DOB itself never leaves. */
+  ageGroup: string
+  currentPin: string
+  newPin: string
+}
+
+export interface MutationResult {
+  ok: boolean
+  /** 'invalid' | 'details_mismatch' | 'wrong_pin' | 'same_pin' | 'locked' | 'invalid_new_pin' */
+  reason?: string
+  remainingAttempts?: number
+  nickname?: string
+}
+
 export interface VerifyPinResult {
   ok: boolean
   remainingAttempts: number
@@ -202,6 +234,54 @@ async function remoteOverrideFaceStep(childId: string, descriptor: number[]): Pr
 
 /** Removes an onboarding record that never completed. The RPC refuses to touch an
  *  account with consent on record or any session history. */
+async function remoteGetProfile(childId: string): Promise<ChildProfile> {
+  const r = await backendRequest<Record<string, unknown>>(`/api/students/${childId}/profile`)
+  return {
+    nickname: String(r.nickname ?? ''),
+    ageGroup: String(r.age_group ?? ''),
+    language: String(r.language ?? 'en'),
+    schoolId: String(r.school_id ?? ''),
+    parentConsent: Boolean(r.parent_consent),
+    childAssent: Boolean(r.child_assent),
+    cameraOptIn: Boolean(r.camera_opt_in),
+    voiceOptIn: Boolean(r.voice_opt_in),
+    locked: Boolean(r.locked),
+    faceRegistered: Boolean(r.face_registered),
+    sessions: Number(r.sessions ?? 0),
+    createdAt: String(r.created_at ?? ''),
+  }
+}
+
+function toMutationResult(r: Record<string, unknown>): MutationResult {
+  return {
+    ok: Boolean(r.ok),
+    reason: r.reason ? String(r.reason) : undefined,
+    remainingAttempts: r.remaining_attempts === undefined ? undefined : Number(r.remaining_attempts),
+    nickname: r.nickname ? String(r.nickname) : undefined,
+  }
+}
+
+async function remoteRenameChild(childId: string, nickname: string): Promise<MutationResult> {
+  return toMutationResult(await post(`/api/students/${childId}/nickname`, { nickname }))
+}
+
+async function remoteChangePin(childId: string, input: PinChangeInput): Promise<MutationResult> {
+  return toMutationResult(
+    await post(`/api/students/${childId}/pin`, {
+      nickname: input.nickname,
+      age_group: input.ageGroup,
+      current_pin: input.currentPin,
+      new_pin: input.newPin,
+    }),
+  )
+}
+
+async function remoteUpdateOptIns(childId: string, camera: boolean, voice: boolean): Promise<MutationResult> {
+  return toMutationResult(
+    await post(`/api/students/${childId}/optins`, { camera_opt_in: camera, voice_opt_in: voice }),
+  )
+}
+
 async function remoteDiscardAccount(childId: string): Promise<DiscardAccountResult> {
   const r = await post<Record<string, unknown>>(`/api/students/${childId}/discard`, {})
   return {
@@ -384,6 +464,40 @@ async function mockOverrideFaceStep(): Promise<FaceOverrideResult> {
   return { ok: true, staffName: 'Staff (mock)' }
 }
 
+async function mockRenameChild(_childId: string, nickname: string): Promise<MutationResult> {
+  const child = readMock()
+  if (child) {
+    child.nickname = nickname.trim()
+    writeMock(child)
+  }
+  return { ok: true, nickname: nickname.trim() }
+}
+
+async function mockChangePin(_childId: string, input: PinChangeInput): Promise<MutationResult> {
+  const child = readMock()
+  if (!child) return { ok: false, reason: 'invalid' }
+  if (child.locked) return { ok: false, reason: 'locked' }
+  if (child.nickname.trim().toLowerCase() !== input.nickname.trim().toLowerCase()) {
+    return { ok: false, reason: 'details_mismatch' }
+  }
+  if (child.pin !== input.currentPin) {
+    child.attempts += 1
+    const remaining = Math.max(0, MOCK_MAX_ATTEMPTS - child.attempts)
+    child.locked = remaining === 0
+    writeMock(child)
+    return { ok: false, reason: child.locked ? 'locked' : 'wrong_pin', remainingAttempts: remaining }
+  }
+  if (child.pin === input.newPin) return { ok: false, reason: 'same_pin' }
+  child.pin = input.newPin
+  child.attempts = 0
+  writeMock(child)
+  return { ok: true }
+}
+
+async function mockUpdateOptIns(): Promise<MutationResult> {
+  return { ok: true }
+}
+
 async function mockDiscardAccount(childId: string): Promise<DiscardAccountResult> {
   localStorage.setItem(
     MOCK_FACES_KEY,
@@ -463,6 +577,14 @@ export const api = {
     isBackendConfigured ? remoteVerifyPin(childId, pin) : mockVerifyPin(childId, pin),
   registerFace: (childId: string, descriptor: number[]): Promise<RegisterFaceResult> =>
     isBackendConfigured ? remoteRegisterFace(childId, descriptor) : mockRegisterFace(childId, descriptor),
+  getProfile: (childId: string): Promise<ChildProfile | null> =>
+    isBackendConfigured ? remoteGetProfile(childId) : Promise.resolve(null),
+  renameChild: (childId: string, nickname: string): Promise<MutationResult> =>
+    isBackendConfigured ? remoteRenameChild(childId, nickname) : mockRenameChild(childId, nickname),
+  changePin: (childId: string, input: PinChangeInput): Promise<MutationResult> =>
+    isBackendConfigured ? remoteChangePin(childId, input) : mockChangePin(childId, input),
+  updateOptIns: (childId: string, camera: boolean, voice: boolean): Promise<MutationResult> =>
+    isBackendConfigured ? remoteUpdateOptIns(childId, camera, voice) : mockUpdateOptIns(),
   overrideFaceStep: (childId: string, staffDescriptor: number[]): Promise<FaceOverrideResult> =>
     isBackendConfigured ? remoteOverrideFaceStep(childId, staffDescriptor) : mockOverrideFaceStep(),
   discardAccount: (childId: string): Promise<DiscardAccountResult> =>
