@@ -126,6 +126,15 @@ class ChildPinLogin(BaseModel):
     emis: str = ""
 
 
+class EmailInput(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
+class PinResetByEmail(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    new_pin: str = Field(pattern=r"^\d{4}$")
+
+
 class ChildFaceLogin(BaseModel):
     descriptor: list[float] = Field(min_length=128, max_length=128)
     emis: str = ""
@@ -349,6 +358,22 @@ def login_student(payload: ChildPinLogin) -> dict[str, Any]:
     with db() as connection:
         row = connection.execute(
             "SELECT login_child_by_pin(%s, %s, %s)", (payload.nickname, payload.pin, payload.emis)
+        ).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/forgot-pin/lookup")
+def forgot_pin_lookup(payload: EmailInput) -> dict[str, Any]:
+    with db() as connection:
+        row = connection.execute("SELECT lookup_child_by_email(%s)", (payload.email,)).fetchone()
+    return row[0]
+
+
+@app.post("/api/students/forgot-pin/reset")
+def forgot_pin_reset(payload: PinResetByEmail) -> dict[str, Any]:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT reset_child_pin_by_email(%s, %s)", (payload.email, payload.new_pin)
         ).fetchone()
     return row[0]
 

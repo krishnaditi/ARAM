@@ -12,6 +12,7 @@ export const ROUTES = {
   voice: '/voice', // S07
   summary: '/summary', // S08 consent summary
   login: '/login', // S09 PIN login (returning)
+  forgotPin: '/forgot-pin', // reset PIN via the signup email
   loginLanguage: '/login-language',
   home: '/home', // S10 returning home
   myProfile: '/my-details', // the child's own record, reached from the dashboard avatar

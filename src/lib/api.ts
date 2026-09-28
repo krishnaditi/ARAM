@@ -1,6 +1,7 @@
 import { isBackendConfigured, post, backendRequest } from './backendClient'
 import { FACE_BLOCK_THRESHOLD, FACE_MATCH_THRESHOLD, descriptorDistance } from './faceApi'
 import type { FlagLevel } from '../data/clusters'
+import { useOnboarding } from '../state/onboardingStore'
 
 /**
  * Data-access layer for onboarding.
@@ -20,6 +21,8 @@ export interface CreateChildInput {
 }
 
 export type CreateChildResult = { ok: true; childId: string } | { ok: false; reason: 'email_taken' }
+
+export type EmailLookupResult = { ok: true; nickname: string; ageGroup: string } | { ok: false }
 
 export interface ConsentFlags {
   parentConsent: boolean
@@ -51,12 +54,13 @@ export interface ChildProfile {
   faceRegistered: boolean
   sessions: number
   createdAt: string
+  email: string
 }
 
 export interface PinChangeInput {
   /** Must match the stored nickname. */
   nickname: string
-  /** Derived on the device from the DOB the child typed; the DOB itself never leaves. */
+  /** Must match the stored age band. */
   ageGroup: string
   currentPin: string
   newPin: string
@@ -185,6 +189,16 @@ async function remoteLoginWithPin(nickname: string, pin: string, emis: string): 
   return toLoginResult(await post('/api/students/login', { nickname, pin, emis }))
 }
 
+async function remoteLookupByEmail(email: string): Promise<EmailLookupResult> {
+  const row = await post<{ ok: boolean; nickname?: string; age_group?: string }>('/api/students/forgot-pin/lookup', { email })
+  return row.ok ? { ok: true, nickname: row.nickname ?? '', ageGroup: row.age_group ?? '' } : { ok: false }
+}
+
+async function remoteResetPinByEmail(email: string, newPin: string): Promise<{ ok: boolean }> {
+  const row = await post<{ ok: boolean }>('/api/students/forgot-pin/reset', { email, new_pin: newPin })
+  return { ok: Boolean(row.ok) }
+}
+
 async function remoteLoginWithFace(descriptor: number[], emis: string): Promise<ChildLoginResult> {
   return toLoginResult(await post('/api/students/login-face', { descriptor, emis }))
 }
@@ -258,6 +272,7 @@ async function remoteGetProfile(childId: string): Promise<ChildProfile> {
     faceRegistered: Boolean(r.face_registered),
     sessions: Number(r.sessions ?? 0),
     createdAt: String(r.created_at ?? ''),
+    email: String(r.email ?? ''),
   }
 }
 
@@ -369,6 +384,7 @@ interface MockChild {
   childId: string
   nickname: string
   email?: string
+  ageGroup?: string
   pin: string
   attempts: number
   locked: boolean
@@ -401,6 +417,7 @@ async function mockCreateChild(input: CreateChildInput): Promise<CreateChildResu
     childId: mockUuid(),
     nickname: input.nickname,
     email: input.email,
+    ageGroup: input.ageGroup,
     pin: input.pin,
     attempts: 0,
     locked: false,
@@ -409,6 +426,43 @@ async function mockCreateChild(input: CreateChildInput): Promise<CreateChildResu
   }
   writeMock(child)
   return { ok: true, childId: child.childId }
+}
+// Mock accounts made before the mock kept an age group don't have one; the device's own
+// record of the same (single) account does.
+function mockAgeGroup(child: MockChild): string {
+  if (child.ageGroup) return child.ageGroup
+  const device = useOnboarding.getState()
+  return device.childId === child.childId ? (device.ageGroup ?? '') : ''
+}
+async function mockGetProfile(childId: string): Promise<ChildProfile | null> {
+  const child = readMock()
+  if (!child || child.childId !== childId) return null
+  return {
+    nickname: child.nickname,
+    ageGroup: mockAgeGroup(child),
+    language: 'en',
+    schoolId: '',
+    parentConsent: false,
+    childAssent: false,
+    cameraOptIn: false,
+    voiceOptIn: false,
+    locked: child.locked,
+    faceRegistered: child.faceDescriptor !== null,
+    sessions: 0,
+    createdAt: '',
+    email: child.email ?? '',
+  }
+}
+async function mockLookupByEmail(email: string): Promise<EmailLookupResult> {
+  const child = readMock()
+  if (!child?.email || child.email !== email) return { ok: false }
+  return { ok: true, nickname: child.nickname, ageGroup: mockAgeGroup(child) }
+}
+async function mockResetPinByEmail(email: string, newPin: string): Promise<{ ok: boolean }> {
+  const child = readMock()
+  if (!child?.email || child.email !== email) return { ok: false }
+  writeMock({ ...child, pin: newPin, attempts: 0, locked: false })
+  return { ok: true }
 }
 async function mockFinalizeOnboarding(): Promise<{ sessionId: string; sessionNumber: number }> {
   return { sessionId: mockUuid(), sessionNumber: 1 }
@@ -582,6 +636,10 @@ export const api = {
     isBackendConfigured ? remoteCreateChild(input) : mockCreateChild(input),
   loginWithPin: (nickname: string, pin: string, emis = ''): Promise<ChildLoginResult> =>
     isBackendConfigured ? remoteLoginWithPin(nickname, pin, emis) : Promise.resolve({ ok: false, reason: 'invalid' }),
+  lookupByEmail: (email: string) =>
+    isBackendConfigured ? remoteLookupByEmail(email) : mockLookupByEmail(email),
+  resetPinByEmail: (email: string, newPin: string) =>
+    isBackendConfigured ? remoteResetPinByEmail(email, newPin) : mockResetPinByEmail(email, newPin),
   loginWithFace: (descriptor: number[], emis = ''): Promise<ChildLoginResult> =>
     isBackendConfigured ? remoteLoginWithFace(descriptor, emis) : Promise.resolve({ ok: false, reason: 'invalid' }),
   finalizeOnboarding: (childId: string, consents: ConsentFlags) =>
@@ -591,7 +649,7 @@ export const api = {
   registerFace: (childId: string, descriptor: number[]): Promise<RegisterFaceResult> =>
     isBackendConfigured ? remoteRegisterFace(childId, descriptor) : mockRegisterFace(childId, descriptor),
   getProfile: (childId: string): Promise<ChildProfile | null> =>
-    isBackendConfigured ? remoteGetProfile(childId) : Promise.resolve(null),
+    isBackendConfigured ? remoteGetProfile(childId) : mockGetProfile(childId),
   renameChild: (childId: string, nickname: string): Promise<MutationResult> =>
     isBackendConfigured ? remoteRenameChild(childId, nickname) : mockRenameChild(childId, nickname),
   changePin: (childId: string, input: PinChangeInput): Promise<MutationResult> =>

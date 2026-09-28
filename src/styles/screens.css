@@ -898,6 +898,11 @@
 .sc-input::placeholder {
   color: #ccc;
 }
+.sc-input:disabled {
+  background: #f4f4f8;
+  color: #666;
+  cursor: not-allowed;
+}
 .dob-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -1206,6 +1211,15 @@
   border: 1.5px solid #e0e0e8;
   color: #888;
   flex: 1;
+}
+.btn-link {
+  background: none;
+  border: none;
+  color: #7c4dcc;
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 0.4rem;
+  align-self: center;
 }
 .sc-option {
   background: #fff;

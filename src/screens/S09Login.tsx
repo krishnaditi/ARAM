@@ -241,6 +241,9 @@ export default function S09Login() {
                   <div className="field-label">{t('s09.enterPin')}</div>
                   <PinEntry value={pin} onChange={setPin} ariaLabel={t('s09.enterPin')} />
                 </div>
+                <button type="button" className="btn btn-link" onClick={() => nav(ROUTES.forgotPin)}>
+                  {t('forgotPin.link')}
+                </button>
                 {error && (
                   <div className="note-card pink">
                     <span className="note-card-icon">⚠️</span>
@@ -393,6 +396,9 @@ export default function S09Login() {
                 <span className="note-card-icon">🔒</span>
                 <span>{t('s09.lockedSub')}</span>
               </div>
+              <button type="button" className="btn btn-primary sc-anim-4" onClick={() => nav(ROUTES.forgotPin)}>
+                {t('forgotPin.link')}
+              </button>
             </>
           ) : (
             <>
@@ -400,6 +406,9 @@ export default function S09Login() {
                 {t('s09.enterPin')}
               </div>
               <PinEntry value={pin} onChange={setPin} autoFocus ariaLabel={t('s09.enterPin')} />
+              <button type="button" className="btn btn-link" onClick={() => nav(ROUTES.forgotPin)}>
+                {t('forgotPin.link')}
+              </button>
               {error && (
                 <div className="note-card pink sc-anim-3">
                   <span className="note-card-icon">⚠️</span>

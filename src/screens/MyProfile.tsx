@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Screen from '../components/Screen'
 import Toggle from '../components/Toggle'
 import { ROUTES } from '../flow'
-import { useOnboarding, deriveAgeGroup, type DobParts } from '../state/onboardingStore'
+import { useOnboarding } from '../state/onboardingStore'
 import { api } from '../lib/api'
 
 /**
@@ -24,8 +24,6 @@ import { api } from '../lib/api'
 
 type Panel = 'none' | 'nickname' | 'pin'
 
-const emptyDob: DobParts = { day: '', month: '', year: '' }
-
 export default function MyProfile() {
   const nav = useNavigate()
   const { t } = useTranslation()
@@ -33,8 +31,7 @@ export default function MyProfile() {
 
   const [panel, setPanel] = useState<Panel>('none')
   const [draftName, setDraftName] = useState(s.nickname)
-  const [checkName, setCheckName] = useState('')
-  const [checkDob, setCheckDob] = useState<DobParts>({ ...emptyDob })
+  const [email, setEmail] = useState<string | null>(null)
   const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
@@ -45,11 +42,23 @@ export default function MyProfile() {
   const childId = s.childId
   const digits = (value: string, max: number) => value.replace(/\D/g, '').slice(0, max)
 
+  // The email lives only on the server (the device never stores it), so it is fetched
+  // in the background; everything else on this screen still renders instantly.
+  useEffect(() => {
+    if (!childId) return
+    let cancelled = false
+    api
+      .getProfile(childId)
+      .then((profile) => !cancelled && setEmail(profile?.email || '—'))
+      .catch(() => !cancelled && setEmail('—'))
+    return () => {
+      cancelled = true
+    }
+  }, [childId])
+
   const closePanel = () => {
     setPanel('none')
     setError(null)
-    setCheckName('')
-    setCheckDob({ ...emptyDob })
     setCurrentPin('')
     setNewPin('')
     setConfirmPin('')
@@ -81,17 +90,15 @@ export default function MyProfile() {
     if (!childId) return
     if (newPin.length !== 4) return setError(t('profile.pinMismatch'))
     if (newPin !== confirmPin) return setError(t('profile.pinMismatch'))
-    // The DOB never leaves the device: it is reduced to the same age band the server
-    // already stores, and only the band is sent — exactly as at signup.
-    const ageGroup = deriveAgeGroup(checkDob)
-    if (!ageGroup) return setError(t('profile.pinDetailsWrong'))
 
     setBusy(true)
     setError(null)
     try {
+      // Nickname and age group come from the signed-in account, not from typing; the
+      // current PIN is what actually proves it's the child changing it.
       const result = await api.changePin(childId, {
-        nickname: checkName,
-        ageGroup,
+        nickname: s.nickname,
+        ageGroup: s.ageGroup ?? '',
         currentPin,
         newPin,
       })
@@ -254,17 +261,13 @@ export default function MyProfile() {
                 <p className="prof-note">{t('profile.pinIntro')}</p>
 
                 <div className="field-label">{t('profile.nickname')}</div>
-                <input className="sc-input" value={checkName} onChange={(e) => setCheckName(e.target.value)} />
+                <input className="sc-input" value={s.nickname} disabled readOnly />
 
-                <div className="field-label">{t('s03.dob')}</div>
-                <div className="dob-row">
-                  <input className="sc-input" placeholder={t('s03.day')} inputMode="numeric" maxLength={2}
-                    value={checkDob.day} onChange={(e) => setCheckDob({ ...checkDob, day: digits(e.target.value, 2) })} />
-                  <input className="sc-input" placeholder={t('s03.month')} inputMode="numeric" maxLength={2}
-                    value={checkDob.month} onChange={(e) => setCheckDob({ ...checkDob, month: digits(e.target.value, 2) })} />
-                  <input className="sc-input" placeholder={t('s03.year')} inputMode="numeric" maxLength={4}
-                    value={checkDob.year} onChange={(e) => setCheckDob({ ...checkDob, year: digits(e.target.value, 4) })} />
-                </div>
+                <div className="field-label">{t('profile.ageGroup')}</div>
+                <input className="sc-input" value={s.ageGroup ?? '—'} disabled readOnly />
+
+                <div className="field-label">{t('s03.email')}</div>
+                <input className="sc-input" value={email ?? '…'} disabled readOnly />
 
                 <div className="field-label">{t('profile.currentPin')}</div>
                 <input className="sc-input" type="password" inputMode="numeric" maxLength={4} placeholder="● ● ● ●"
@@ -284,7 +287,7 @@ export default function MyProfile() {
                   <button className="btn btn-back" onClick={closePanel} disabled={busy}>{t('profile.cancel')}</button>
                   <button
                     className="btn btn-primary"
-                    disabled={busy || !checkName.trim() || currentPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4}
+                    disabled={busy || currentPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4}
                     onClick={() => void savePin()}
                   >
                     {busy ? <span className="btn-spinner" aria-hidden="true" /> : null}

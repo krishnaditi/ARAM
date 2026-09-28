@@ -708,18 +708,31 @@
     "nicknameSaved": "Saved. You'll be called {{name}} from now on.",
     "nicknameInvalid": "Please tell me what to call you.",
     "changePin": "🔒 Change my PIN",
-    "pinIntro": "To change your PIN, tell me your name and birthday again, plus the PIN you use now.",
+    "pinIntro": "Your name, age group and email are shown below. Type the PIN you use now, then your new PIN.",
     "currentPin": "The PIN I use now",
     "newPin": "My new PIN",
     "confirmNewPin": "Type my new PIN again",
     "savePin": "Change my PIN",
     "pinSaved": "Done. Use your new PIN next time you sign in.",
     "pinMismatch": "Those two PINs are different. Try again.",
-    "pinDetailsWrong": "Those details don't match this account. Check your name and birthday.",
+    "pinDetailsWrong": "That didn't match this account. Please sign out and sign in again.",
     "pinWrong": "That isn't the PIN you use now. {{remaining}} tries left.",
     "pinSame": "That's the PIN you already have. Pick a different one.",
     "pinLocked": "This account is locked. Please ask a teacher for help.",
     "saveFailed": "I couldn't save that just now. Check your connection and try again.",
     "back": "← Back to my space"
+  },
+  "forgotPin": {
+    "link": "Forgot PIN?",
+    "title": "Reset your PIN",
+    "emailSubtitle": "Enter the email ID you used when you created your account.",
+    "resetSubtitle": "Your details are shown below. Choose a new 4-digit PIN.",
+    "newPin": "New 4-digit PIN",
+    "save": "Save new PIN",
+    "ageNote": "We never store your full date of birth, only your age group.",
+    "done": "Your PIN has been changed, {{name}}. Use your new PIN to sign in.",
+    "goToLogin": "Go to sign in",
+    "errNotFound": "We couldn't find an account with that email ID. Please check it and try again.",
+    "errNetwork": "We could not reach the server. Please try again."
   }
 }

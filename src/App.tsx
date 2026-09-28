@@ -15,6 +15,7 @@ import S06Camera from './screens/S06Camera'
 import S07Voice from './screens/S07Voice'
 import S08Summary from './screens/S08Summary'
 import S09Login from './screens/S09Login'
+import ForgotPin from './screens/ForgotPin'
 import LoginLanguage from './screens/LoginLanguage'
 import S10Home from './screens/S10Home'
 import MyProfile from './screens/MyProfile'
@@ -86,6 +87,7 @@ export default function App() {
           }
         />
         <Route path={ROUTES.login} element={<S09Login />} />
+        <Route path={ROUTES.forgotPin} element={<ForgotPin />} />
         <Route path={ROUTES.loginLanguage} element={<LoginLanguage />} />
         <Route path={ROUTES.staffRegister} element={<StaffRegister />} />
         <Route
