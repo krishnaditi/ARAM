@@ -130,6 +130,17 @@ const ALL_LINES: Record<string, SpokenLine[]> = {
   ],
 }
 
+/**
+ * The session chat (C01–C05) speaks lines picked by what the child tapped, so they can't be
+ * listed per route above. Every string under this i18n section gets a clip; the screens
+ * choose which to play. Option lists on C02/C03 are deliberately not spoken.
+ */
+export const SESSION_SPEECH_SECTION = 'sessionSpeech'
+
+export function speaksInSession(pathname: string): boolean {
+  return pathname === ROUTES.cluster || pathname.startsWith(`${ROUTES.cluster}/`) || pathname === ROUTES.basket
+}
+
 /** Never spoken: saying a nickname or PIN aloud in a classroom undoes the whole privacy model. */
 export const NEVER_SPOKEN = [
   's01.greetingLine', // {{name}}
