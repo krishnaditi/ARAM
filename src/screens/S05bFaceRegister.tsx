@@ -153,9 +153,6 @@ export default function S05bFaceRegister() {
     )
   }
 
-  // Registering is optional, so Continue is always available; a successful capture is
-  // simply the happy path, not a gate.
-  const canContinue = true
   const showCamera =
     (cam.stage === 'connecting' || cam.stage === 'streaming') &&
     (result === 'none' || result === 'detecting')

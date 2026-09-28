@@ -27,19 +27,26 @@ export const FACE_BLOCK_THRESHOLD = 0.45
 // paying for it. api.ts imports this file too (for descriptorDistance below) and api.ts is
 // used almost everywhere, so keeping the face-api.js import itself dynamic is what matters,
 // not whether the *caller* is dynamically imported.
-const INFERENCE_TIMEOUT_MS = 20_000
-// Tried in order, cheapest first. Bigger input catches small faces; `pad` shrinks the frame
-// inside a grey border, which is what finds a close-up face filling the camera; SSD (a 5.6MB
-// download, so last) catches the rest. Each step alone misses cases the others handle.
-const DETECTOR_CHAIN: { tiny?: { inputSize: number; scoreThreshold: number }; ssd?: { minConfidence: number }; pad?: number }[] = [
+const INFERENCE_TIMEOUT_MS = 10_000
+// Tried in order, cheapest first. A fresh frame comes second because the commonest miss is
+// a frame blurred by the tap itself, and one fast pass on a new frame fixes that far more
+// cheaply than the heavy detectors. Bigger input catches small faces; `pad` shrinks the
+// frame inside a grey border, which is what finds a close-up face filling the camera; SSD
+// catches the rest. Each step alone misses cases the others handle.
+type DetectorStep = {
+  tiny?: { inputSize: number; scoreThreshold: number }
+  ssd?: { minConfidence: number }
+  pad?: number
+  fresh?: boolean
+}
+const DETECTOR_CHAIN: DetectorStep[] = [
   { tiny: { inputSize: 416, scoreThreshold: 0.5 } },
+  { tiny: { inputSize: 416, scoreThreshold: 0.5 }, fresh: true },
   { tiny: { inputSize: 608, scoreThreshold: 0.35 } },
   { tiny: { inputSize: 512, scoreThreshold: 0.4 }, pad: 0.6 },
   { ssd: { minConfidence: 0.3 } },
 ]
-// Fresh frames help when the capture tap shook the camera.
-const EXTRA_FRAMES = 2
-const EXTRA_FRAME_DELAY_MS = 300
+const FRESH_FRAME_DELAY_MS = 150
 
 type FaceApiModule = typeof import('@vladmandic/face-api')
 let faceapiModule: Promise<FaceApiModule> | null = null
@@ -57,6 +64,7 @@ function loadFaceApiModule(): Promise<FaceApiModule> {
 type TfEngine = {
   engine(): { reset(): void }
   setBackend(name: string): Promise<boolean>
+  getBackend(): string
   backend(): { gpgpu?: { gl?: WebGLRenderingContext } }
 }
 const tfOf = (faceapi: FaceApiModule) => faceapi.tf as unknown as TfEngine
@@ -83,6 +91,9 @@ export function loadFaceModels(): Promise<void> {
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ])
+        await warmUp(faceapi)
+        // Downloaded now, while the child is lining up, not when a hard capture needs it.
+        void loadSsdModel(faceapi).catch(() => {})
         contextLost = false
         tfOf(faceapi)
           .backend()
@@ -96,9 +107,33 @@ export function loadFaceModels(): Promise<void> {
   return modelsLoaded
 }
 
+// On WebGL the first run of each network compiles its GPU shaders, which took ~5s in testing
+// against ~0.8s for every later run. Doing it on a blank frame when the screen opens keeps
+// that cost off the child's first tap. A blank frame finds no face, so the landmark and
+// descriptor networks are run directly to compile theirs too.
+async function warmUp(faceapi: FaceApiModule): Promise<void> {
+  const canvas = document.createElement('canvas')
+  canvas.width = 160
+  canvas.height = 160
+  const context = canvas.getContext('2d')
+  if (!context) return
+  context.fillStyle = '#808080'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  try {
+    await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions(DETECTOR_CHAIN[0].tiny))
+    await faceapi.nets.faceLandmark68Net.detectLandmarks(canvas)
+    await faceapi.nets.faceRecognitionNet.computeFaceDescriptor(canvas)
+  } catch {
+    // Only a speed-up; a real capture will surface any genuine failure.
+  }
+}
+
 async function resetFaceBackend(faceapi: FaceApiModule): Promise<void> {
   tfOf(faceapi).engine().reset()
   modelsLoaded = null
+  // engine().reset() disposes every model's weights, SSD's included. Without clearing this,
+  // SSD would keep its disposed weights and fail every later capture that reaches it.
+  ssdLoaded = null
   await loadFaceModels()
 }
 
@@ -184,22 +219,21 @@ async function detectInFrames(
   nextFrame?: () => HTMLCanvasElement | null,
 ) {
   logFrame(input, 'captured frame')
+  if (faceDebug) console.warn(`[face] backend: ${tfOf(faceapi).getBackend()}`)
   for (const step of DETECTOR_CHAIN) {
+    let frame: HTMLVideoElement | HTMLCanvasElement | null = input
+    if (step.fresh) {
+      if (!nextFrame) continue
+      await new Promise((resolve) => setTimeout(resolve, FRESH_FRAME_DELAY_MS))
+      frame = nextFrame()
+      if (!frame) continue
+    }
     const started = performance.now()
-    const descriptor = await detectOnce(faceapi, input, step)
+    const descriptor = await detectOnce(faceapi, frame, step)
     if (faceDebug) {
       console.warn(`[face] ${JSON.stringify(step)} -> ${descriptor ? 'FOUND' : 'none'} in ${Math.round(performance.now() - started)}ms`)
     }
     if (descriptor) return descriptor
-  }
-  // Fresh frames cost one cheap pass each: the tap may simply have blurred the first one.
-  for (let attempt = 0; attempt < EXTRA_FRAMES && nextFrame; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, EXTRA_FRAME_DELAY_MS))
-    const frame = nextFrame()
-    for (const step of DETECTOR_CHAIN.slice(0, 3)) {
-      const descriptor = frame && (await detectOnce(faceapi, frame, step))
-      if (descriptor) return descriptor
-    }
   }
   return null
 }
