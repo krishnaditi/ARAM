@@ -17,11 +17,9 @@ export default function S09Login() {
   const nav = useNavigate()
   const { t } = useTranslation()
   const childId = useOnboarding((s) => s.childId)
-  const faceRegistered = useOnboarding((s) => s.faceRegistered)
   const unlock = useOnboarding((s) => s.unlock)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [locked, setLocked] = useState(false)
   const [busy, setBusy] = useState(false)
   const [selectedRole, setSelectedRole] = useState<StaffRole | null>(null)
   const [adminUsername, setAdminUsername] = useState('')
@@ -39,12 +37,13 @@ export default function S09Login() {
   // Warms up the recognition model as soon as face login is an option on this screen, so
   // the wait lands during camera setup instead of after the child taps Capture.
   useEffect(() => {
-    if (faceRegistered || !childId) void loadFaceModels()
-  }, [faceRegistered, childId])
+    if (selectedRole === 'student') void loadFaceModels()
+  }, [selectedRole])
 
-  // Signing in on a device that never saw this child: the server finds the account from
-  // the nickname + PIN (or the face) and hands back the child_id this device then keeps.
-  const adoptAndEnter = (account: NonNullable<Awaited<ReturnType<typeof api.loginWithPin>>>) => {
+  // The server finds the account from the nickname + PIN (or the face) and hands back the
+  // child_id this device then keeps. Re-offers the helpline once if a clinician alert is
+  // pending from last session, otherwise goes straight home.
+  const adoptAndEnter = async (account: NonNullable<Awaited<ReturnType<typeof api.loginWithPin>>>) => {
     adoptChild({
       childId: account.childId!,
       nickname: account.nickname ?? '',
@@ -53,7 +52,8 @@ export default function S09Login() {
       faceRegistered: Boolean(account.faceRegistered),
     })
     unlock()
-    nav(ROUTES.home)
+    const ctx = await api.getReturningContext(account.childId!).catch(() => null)
+    nav(ctx?.clinicianAlertPending ? ROUTES.reoffer : ROUTES.home)
   }
 
   const signInWithPin = async () => {
@@ -100,36 +100,6 @@ export default function S09Login() {
     }
   }
 
-  // Shared by PIN success and face-match success: re-offer the helpline once if a
-  // clinician alert is pending from last session, otherwise go straight home.
-  const onUnlocked = async () => {
-    unlock()
-    if (!childId) return nav(ROUTES.home)
-    const ctx = await api.getReturningContext(childId)
-    nav(ctx.clinicianAlertPending ? ROUTES.reoffer : ROUTES.home)
-  }
-
-  const onUnlock = async () => {
-    if (!childId || pin.length !== 4) return
-    setBusy(true)
-    setError(null)
-    try {
-      const res = await api.verifyPin(childId, pin)
-      if (res.ok) {
-        await onUnlocked()
-        return
-      }
-      setPin('')
-      if (res.locked) {
-        setLocked(true)
-      } else {
-        setError(t('s09.errWrong', { remaining: res.remainingAttempts }))
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const startFaceLogin = () => {
     setFaceActive(true)
     setFaceResult('none')
@@ -145,33 +115,6 @@ export default function S09Login() {
   const retryFaceLogin = () => {
     setFaceResult('none')
     void cam.start()
-  }
-
-  // Turns the captured frame into a descriptor and checks it against the one registered on
-  // S05b (see lib/faceApi.ts) — the camera really opens, a real frame is really compared,
-  // and only a match under FACE_MATCH_THRESHOLD unlocks the account.
-  const captureAndVerifyFace = async () => {
-    const canvas = cam.captureCanvas()
-    if (!canvas || !childId) return
-    setFaceResult('detecting')
-    try {
-      const descriptor = await getFaceDescriptor(canvas, cam.captureCanvas)
-      cam.stop()
-      if (!descriptor) {
-        setFaceResult('noFace')
-        return
-      }
-      const res = await api.verifyFace(childId, Array.from(descriptor))
-      if (res.ok) {
-        await onUnlocked()
-        return
-      }
-      setFaceResult('mismatch')
-    } catch {
-      cam.stop()
-      setFaceResult('none')
-      cam.setStage('error')
-    }
   }
 
   const roleOptions: { role: StaffRole; icon: string }[] = [
@@ -199,110 +142,6 @@ export default function S09Login() {
               ))}
             </div>
             {!childId && <div className="note-card gray">Choose Student to start the student onboarding journey.</div>}
-          </div>
-        </div>
-      </Screen>
-    )
-  }
-
-  // A device that has never seen this child still needs to reach an existing account, so
-  // the same PIN and face the child already uses are checked against the server instead of
-  // against the id in this browser's storage.
-  if (selectedRole === 'student' && !childId) {
-    return (
-      <Screen
-        footer={
-          <div className="btn-row">
-            <button className="btn btn-back" onClick={() => setSelectedRole(null)}>← {t('common.back')}</button>
-            {!faceActive && (
-              <button className="btn btn-primary" disabled={signInName.trim().length === 0 || pin.length !== 4 || busy} onClick={() => void signInWithPin()}>
-                {t('s09.unlock')} →
-              </button>
-            )}
-          </div>
-        }
-      >
-        <div className="bg-gradient">
-          <div className="sc" style={{ justifyContent: 'center', gap: '1.2rem' }}>
-            <BrandLogo animation="bounce" taglineKey="welcomeBack" />
-
-            {!faceActive && (
-              <>
-                <div className="sc-anim-2" style={{ width: '100%' }}>
-                  <div className="field-label">{t('s03.nickname')}</div>
-                  <input
-                    className="sc-input"
-                    value={signInName}
-                    onChange={(event) => setSignInName(event.target.value)}
-                    placeholder={t('s03.nicknamePlaceholder')}
-                  />
-                </div>
-                <div className="sc-anim-3" style={{ width: '100%' }}>
-                  <div className="field-label">{t('s09.enterPin')}</div>
-                  <PinEntry value={pin} onChange={setPin} ariaLabel={t('s09.enterPin')} />
-                </div>
-                <button type="button" className="btn btn-link" onClick={() => nav(ROUTES.forgotPin)}>
-                  {t('forgotPin.link')}
-                </button>
-                {error && (
-                  <div className="note-card pink">
-                    <span className="note-card-icon">⚠️</span>
-                    <span>{error}</span>
-                  </div>
-                )}
-                <button type="button" className="btn btn-outline" disabled={busy} onClick={startFaceLogin}>
-                  🤳 {t('s09.faceLogin')}
-                </button>
-                <button type="button" className="btn btn-outline" onClick={() => nav(ROUTES.language)}>
-                  I'm new here — create an account
-                </button>
-              </>
-            )}
-
-            {faceActive && (
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                {(faceResult === 'none' || faceResult === 'detecting') && (cam.stage === 'connecting' || cam.stage === 'streaming') && (
-                  <>
-                    <div className="face-camera-frame" style={{ width: '12rem', height: '12rem' }}>
-                      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                      <video ref={cam.videoRef} className="face-camera-video" playsInline muted onLoadedMetadata={cam.markStreaming} />
-                    </div>
-                    {cam.stage === 'connecting' || faceResult === 'detecting' ? (
-                      <div className="note-card gray">
-                        <span className="note-card-icon">⏳</span>
-                        <span>{faceResult === 'detecting' ? t('s09.detecting') : t('s05b.startingCamera')}</span>
-                      </div>
-                    ) : (
-                      <div className="btn-row" style={{ width: '100%' }}>
-                        <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>{t('s09.cancelFace')}</button>
-                        <button type="button" className="btn btn-primary" onClick={() => void signInWithFace()}>
-                          📸 {t('s05b.captureNow')}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {(faceResult === 'mismatch' || faceResult === 'noFace' || cam.stage === 'error') && (
-                  <>
-                    <div className="note-card pink">
-                      <span className="note-card-icon">⚠️</span>
-                      <span>
-                        {faceResult === 'noFace'
-                          ? t('s05b.noFaceDetected')
-                          : cam.stage === 'error'
-                            ? t('s09.cameraError')
-                            : 'We could not find an account for that face. Try your name and PIN instead.'}
-                      </span>
-                    </div>
-                    <div className="btn-row" style={{ width: '100%' }}>
-                      <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>{t('common.back')}</button>
-                      <button type="button" className="btn btn-primary" onClick={retryFaceLogin}>{t('s05b.tryAgain')}</button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </Screen>
@@ -361,162 +200,102 @@ export default function S09Login() {
     )
   }
 
-  const footer = locked ? (
-    <div className="btn-row">
-      <button className="btn btn-back" onClick={() => nav(ROUTES.welcome)}>
-        ← {t('common.back')}
-      </button>
-    </div>
-  ) : (
-    <div className="btn-row">
-      <button className="btn btn-back" onClick={() => nav(ROUTES.welcome)}>
-        ← {t('common.back')}
-      </button>
-      <button className="btn btn-primary" onClick={onUnlock} disabled={pin.length !== 4 || busy}>
-        {t('s09.unlock')} →
-      </button>
-    </div>
-  )
-
+  // Students always type nickname AND PIN, even on a device that already knows an
+  // account: a shared school tablet may hold someone else's, and the PIN alone would
+  // let anyone who knows it into whichever account the device happens to remember.
   return (
-    <Screen footer={footer}>
+    <Screen
+      footer={
+        <div className="btn-row">
+          <button className="btn btn-back" onClick={() => setSelectedRole(null)}>← {t('common.back')}</button>
+          {!faceActive && (
+            <button className="btn btn-primary" disabled={signInName.trim().length === 0 || pin.length !== 4 || busy} onClick={() => void signInWithPin()}>
+              {t('s09.unlock')} →
+            </button>
+          )}
+        </div>
+      }
+    >
       <div className="bg-gradient">
-        <div className="sc" style={{ justifyContent: 'center', gap: '2rem' }}>
+        <div className="sc" style={{ justifyContent: 'center', gap: '1.2rem' }}>
           <BrandLogo animation="bounce" taglineKey="welcomeBack" />
 
-          {locked ? (
+          {!faceActive && (
             <>
-              <div
-                className="sc-anim-2"
-                style={{ textAlign: 'center', fontSize: '1.6rem', fontWeight: 800, color: '#8b2500' }}
-              >
-                🔒 {t('s09.lockedTitle')}
+              <div className="sc-anim-2" style={{ width: '100%' }}>
+                <div className="field-label">{t('s03.nickname')}</div>
+                <input
+                  className="sc-input"
+                  value={signInName}
+                  onChange={(event) => setSignInName(event.target.value)}
+                  placeholder={t('s03.nicknamePlaceholder')}
+                />
               </div>
-              <div className="note-card pink sc-anim-3">
-                <span className="note-card-icon">🔒</span>
-                <span>{t('s09.lockedSub')}</span>
+              <div className="sc-anim-3" style={{ width: '100%' }}>
+                <div className="field-label">{t('s09.enterPin')}</div>
+                <PinEntry value={pin} onChange={setPin} ariaLabel={t('s09.enterPin')} />
               </div>
-              <button type="button" className="btn btn-primary sc-anim-4" onClick={() => nav(ROUTES.forgotPin)}>
-                {t('forgotPin.link')}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="sc-anim-2" style={{ textAlign: 'center', fontSize: '1.3rem', color: '#888' }}>
-                {t('s09.enterPin')}
-              </div>
-              <PinEntry value={pin} onChange={setPin} autoFocus ariaLabel={t('s09.enterPin')} />
               <button type="button" className="btn btn-link" onClick={() => nav(ROUTES.forgotPin)}>
                 {t('forgotPin.link')}
               </button>
               {error && (
-                <div className="note-card pink sc-anim-3">
+                <div className="note-card pink">
                   <span className="note-card-icon">⚠️</span>
                   <span>{error}</span>
                 </div>
               )}
+              <button type="button" className="btn btn-outline" disabled={busy} onClick={startFaceLogin}>
+                🤳 {t('s09.faceLogin')}
+              </button>
+              <button type="button" className="btn btn-outline" onClick={() => nav(ROUTES.language)}>
+                I'm new here — create an account
+              </button>
+            </>
+          )}
 
-              {faceRegistered && !faceActive && (
-                <button
-                  type="button"
-                  className="btn btn-outline sc-anim-4"
-                  onClick={startFaceLogin}
-                  disabled={busy}
-                >
-                  🤳 {t('s09.faceLogin')}
-                </button>
-              )}
-
-              {faceActive && (
-                <div
-                  className="sc-anim-4"
-                  style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
-                >
-                  {(faceResult === 'none' || faceResult === 'detecting') && (cam.stage === 'connecting' || cam.stage === 'streaming') && (
-                    <>
-                      <div className="face-camera-frame" style={{ width: '10rem', height: '10rem' }}>
-                        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                        <video
-                          ref={cam.videoRef}
-                          className="face-camera-video"
-                          playsInline
-                          muted
-                          onLoadedMetadata={cam.markStreaming}
-                        />
-                      </div>
-                      {cam.stage === 'connecting' ? (
-                        <div className="note-card gray">
-                          <span className="note-card-icon">⏳</span>
-                          <span>{t('s05b.startingCamera')}</span>
-                        </div>
-                      ) : faceResult === 'none' && (
-                        <div className="btn-row" style={{ width: '100%' }}>
-                          <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>
-                            {t('s09.cancelFace')}
-                          </button>
-                          <button type="button" className="btn btn-primary" onClick={() => void captureAndVerifyFace()}>
-                            📸 {t('s05b.captureNow')}
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {faceResult === 'detecting' && (
+          {faceActive && (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+              {(faceResult === 'none' || faceResult === 'detecting') && (cam.stage === 'connecting' || cam.stage === 'streaming') && (
+                <>
+                  <div className="face-camera-frame" style={{ width: '12rem', height: '12rem' }}>
+                    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                    <video ref={cam.videoRef} className="face-camera-video" playsInline muted onLoadedMetadata={cam.markStreaming} />
+                  </div>
+                  {cam.stage === 'connecting' || faceResult === 'detecting' ? (
                     <div className="note-card gray">
                       <span className="note-card-icon">⏳</span>
-                      <span>{t('s09.detecting')}</span>
+                      <span>{faceResult === 'detecting' ? t('s09.detecting') : t('s05b.startingCamera')}</span>
+                    </div>
+                  ) : (
+                    <div className="btn-row" style={{ width: '100%' }}>
+                      <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>{t('s09.cancelFace')}</button>
+                      <button type="button" className="btn btn-primary" onClick={() => void signInWithFace()}>
+                        📸 {t('s05b.captureNow')}
+                      </button>
                     </div>
                   )}
-
-                  {faceResult === 'mismatch' && (
-                    <>
-                      <div className="note-card pink">
-                        <span className="note-card-icon">⚠️</span>
-                        <span>{t('s09.faceMismatch')}</span>
-                      </div>
-                      <div className="btn-row" style={{ width: '100%' }}>
-                        <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>
-                          {t('common.back')}
-                        </button>
-                        <button type="button" className="btn btn-primary" onClick={retryFaceLogin}>
-                          {t('s05b.tryAgain')}
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {faceResult === 'noFace' && (
-                    <>
-                      <div className="note-card pink">
-                        <span className="note-card-icon">⚠️</span>
-                        <span>{t('s05b.noFaceDetected')}</span>
-                      </div>
-                      <button type="button" className="btn btn-outline" onClick={retryFaceLogin}>
-                        {t('s05b.tryAgain')}
-                      </button>
-                    </>
-                  )}
-
-                  {faceResult === 'none' && cam.stage === 'error' && (
-                    <>
-                      <div className="note-card pink">
-                        <span className="note-card-icon">⚠️</span>
-                        <span>{t('s09.cameraError')}</span>
-                      </div>
-                      <button type="button" className="btn btn-outline" onClick={cancelFaceLogin}>
-                        {t('common.back')}
-                      </button>
-                    </>
-                  )}
-                </div>
+                </>
               )}
 
-              <div className="note-card gray sc-anim-4">
-                <span className="note-card-icon">🔒</span>
-                <span>{t('s09.note')}</span>
-              </div>
-            </>
+              {(faceResult === 'mismatch' || faceResult === 'noFace' || cam.stage === 'error') && (
+                <>
+                  <div className="note-card pink">
+                    <span className="note-card-icon">⚠️</span>
+                    <span>
+                      {faceResult === 'noFace'
+                        ? t('s05b.noFaceDetected')
+                        : cam.stage === 'error'
+                          ? t('s09.cameraError')
+                          : 'We could not find an account for that face. Try your name and PIN instead.'}
+                    </span>
+                  </div>
+                  <div className="btn-row" style={{ width: '100%' }}>
+                    <button type="button" className="btn btn-back" onClick={cancelFaceLogin}>{t('common.back')}</button>
+                    <button type="button" className="btn btn-primary" onClick={retryFaceLogin}>{t('s05b.tryAgain')}</button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

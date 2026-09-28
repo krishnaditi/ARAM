@@ -582,6 +582,41 @@ async function mockVerifyFace(_childId: string, descriptor: number[]): Promise<V
   return { ok: distance < FACE_MATCH_THRESHOLD, distance }
 }
 
+function mockAccount(child: MockChild): ChildLoginResult {
+  return {
+    ok: true,
+    childId: child.childId,
+    nickname: child.nickname,
+    language: useOnboarding.getState().language,
+    ageGroup: mockAgeGroup(child),
+    faceRegistered: child.faceDescriptor !== null,
+  }
+}
+// Same rules as login_child_by_pin: nickname ignores case and spaces at the ends, and
+// three wrong PINs lock the account.
+async function mockLoginWithPin(nickname: string, pin: string): Promise<ChildLoginResult> {
+  const child = readMock()
+  if (!child || child.nickname.trim().toLowerCase() !== nickname.trim().toLowerCase()) {
+    return { ok: false, reason: 'invalid' }
+  }
+  if (child.locked) return { ok: false, reason: 'locked' }
+  if (child.pin !== pin) {
+    child.attempts += 1
+    child.locked = child.attempts >= MOCK_MAX_ATTEMPTS
+    writeMock(child)
+    return { ok: false, reason: child.locked ? 'locked' : 'invalid' }
+  }
+  child.attempts = 0
+  writeMock(child)
+  return mockAccount(child)
+}
+async function mockLoginWithFace(descriptor: number[]): Promise<ChildLoginResult> {
+  const child = readMock()
+  if (!child) return { ok: false, reason: 'invalid' }
+  const match = await mockVerifyFace(child.childId, descriptor)
+  return match.ok ? mockAccount(child) : { ok: false, reason: 'invalid' }
+}
+
 async function mockGetReturningContext(): Promise<ReturningContext> {
   const child = readMock()
   return {
@@ -635,13 +670,13 @@ export const api = {
   createChild: (input: CreateChildInput) =>
     isBackendConfigured ? remoteCreateChild(input) : mockCreateChild(input),
   loginWithPin: (nickname: string, pin: string, emis = ''): Promise<ChildLoginResult> =>
-    isBackendConfigured ? remoteLoginWithPin(nickname, pin, emis) : Promise.resolve({ ok: false, reason: 'invalid' }),
+    isBackendConfigured ? remoteLoginWithPin(nickname, pin, emis) : mockLoginWithPin(nickname, pin),
   lookupByEmail: (email: string) =>
     isBackendConfigured ? remoteLookupByEmail(email) : mockLookupByEmail(email),
   resetPinByEmail: (email: string, newPin: string) =>
     isBackendConfigured ? remoteResetPinByEmail(email, newPin) : mockResetPinByEmail(email, newPin),
   loginWithFace: (descriptor: number[], emis = ''): Promise<ChildLoginResult> =>
-    isBackendConfigured ? remoteLoginWithFace(descriptor, emis) : Promise.resolve({ ok: false, reason: 'invalid' }),
+    isBackendConfigured ? remoteLoginWithFace(descriptor, emis) : mockLoginWithFace(descriptor),
   finalizeOnboarding: (childId: string, consents: ConsentFlags) =>
     isBackendConfigured ? remoteFinalizeOnboarding(childId, consents) : mockFinalizeOnboarding(),
   verifyPin: (childId: string, pin: string) =>
