@@ -102,6 +102,7 @@ class StudentCreate(BaseModel):
     nickname: str = Field(min_length=1, max_length=80)
     age_group: str = Field(min_length=1, max_length=20)
     pin: str = Field(pattern=r"^\d{4}$")
+    email: str = Field(min_length=3, max_length=254, pattern=r"^\s*[^@\s]+@[^@\s]+\.[^@\s]+\s*$")
 
 
 class ConsentInput(BaseModel):
@@ -211,11 +212,17 @@ def health() -> dict[str, str]:
 
 @app.post("/api/students")
 def create_student(payload: StudentCreate) -> dict[str, str]:
-    with db() as connection:
-        row = connection.execute(
-            "SELECT create_child(%s, %s, %s, %s, %s)",
-            (payload.emis, payload.language, payload.nickname, payload.age_group, payload.pin),
-        ).fetchone()
+    try:
+        with db() as connection:
+            row = connection.execute(
+                "SELECT create_child(%s, %s, %s, %s, %s, %s)",
+                (payload.emis, payload.language, payload.nickname, payload.age_group, payload.pin, payload.email),
+            ).fetchone()
+    except psycopg.errors.UniqueViolation as error:
+        if error.diag.constraint_name != "idx_child_email_unique":
+            raise
+        # A fixed code, not a sentence: the app translates it into the child's language.
+        raise HTTPException(status_code=409, detail="email_taken") from error
     return {"child_id": str(row[0])}
 
 

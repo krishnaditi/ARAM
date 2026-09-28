@@ -60,6 +60,8 @@ interface OnboardingState {
   dob: DobParts
   pin: string
   pinConfirm: string
+  /** Held only until the account is created; the server keeps it, the device doesn't. */
+  email: string
 
   // Session-only unlock flag. Deliberately NOT persisted: a fresh app open/reload
   // always starts locked, so the PIN gate can't be bypassed by opening /home directly.
@@ -80,6 +82,7 @@ interface OnboardingState {
   setDob: (dob: Partial<DobParts>) => void
   setPin: (pin: string) => void
   setPinConfirm: (pin: string) => void
+  setEmail: (email: string) => void
   setParentConsent: (v: boolean) => void
   setChildAssent: (v: boolean) => void
   setCameraOptIn: (v: boolean) => void
@@ -126,6 +129,7 @@ export const useOnboarding = create<OnboardingState>()(
       dob: { ...emptyDob },
       pin: '',
       pinConfirm: '',
+      email: '',
       unlocked: false,
       staffRole: null,
       staffName: '',
@@ -144,6 +148,7 @@ export const useOnboarding = create<OnboardingState>()(
       setDob: (dob) => set((s) => ({ dob: { ...s.dob, ...dob } })),
       setPin: (pin) => set({ pin }),
       setPinConfirm: (pinConfirm) => set({ pinConfirm }),
+      setEmail: (email) => set({ email }),
       setParentConsent: (parentConsent) => set({ parentConsent }),
       setChildAssent: (childAssent) => set({ childAssent }),
       setCameraOptIn: (cameraOptIn) => set({ cameraOptIn }),
@@ -152,7 +157,7 @@ export const useOnboarding = create<OnboardingState>()(
       setSpeechOn: (speechOn) => set({ speechOn }),
       markSpeechHintSeen: () => set({ speechHintSeen: true }),
       commitChild: (childId, ageGroup) =>
-        set({ childId, ageGroup, dob: { ...emptyDob }, pin: '', pinConfirm: '' }),
+        set({ childId, ageGroup, dob: { ...emptyDob }, pin: '', pinConfirm: '', email: '' }),
       adoptChild: ({ childId, nickname, language, ageGroup, faceRegistered }) => {
         applyLanguage(language)
         set({ childId, nickname, language, ageGroup, faceRegistered, dob: { ...emptyDob }, pin: '', pinConfirm: '' })
@@ -181,6 +186,7 @@ export const useOnboarding = create<OnboardingState>()(
           dob: { ...emptyDob },
           pin: '',
           pinConfirm: '',
+          email: '',
           unlocked: false,
         }),
     }),

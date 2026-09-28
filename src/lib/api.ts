@@ -16,7 +16,10 @@ export interface CreateChildInput {
   nickname: string
   ageGroup: string
   pin: string
+  email: string
 }
+
+export type CreateChildResult = { ok: true; childId: string } | { ok: false; reason: 'email_taken' }
 
 export interface ConsentFlags {
   parentConsent: boolean
@@ -159,15 +162,21 @@ export interface ClusterSelectionInput {
 
 // ───────────────────────────── PostgreSQL API implementation ─────────────────────────
 
-async function remoteCreateChild(input: CreateChildInput): Promise<{ childId: string }> {
-  const row = await post<{ child_id: string }>('/api/students', {
-    emis: input.emis,
-    language: input.language,
-    nickname: input.nickname,
-    age_group: input.ageGroup,
-    pin: input.pin,
-  })
-  return { childId: row.child_id }
+async function remoteCreateChild(input: CreateChildInput): Promise<CreateChildResult> {
+  try {
+    const row = await post<{ child_id: string }>('/api/students', {
+      emis: input.emis,
+      language: input.language,
+      nickname: input.nickname,
+      age_group: input.ageGroup,
+      pin: input.pin,
+      email: input.email,
+    })
+    return { ok: true, childId: row.child_id }
+  } catch (error) {
+    if (error instanceof Error && error.message === 'email_taken') return { ok: false, reason: 'email_taken' }
+    throw error
+  }
 }
 
 /** Writes both consents + opt-ins and creates SESSION #1 atomically (RPC enforces both consents). */
@@ -359,6 +368,7 @@ const MOCK_KEY = 'aram.mock.child'
 interface MockChild {
   childId: string
   nickname: string
+  email?: string
   pin: string
   attempts: number
   locked: boolean
@@ -384,10 +394,13 @@ function writeMock(c: MockChild): void {
 
 const MOCK_MAX_ATTEMPTS = 3
 
-async function mockCreateChild(input: CreateChildInput): Promise<{ childId: string }> {
+async function mockCreateChild(input: CreateChildInput): Promise<CreateChildResult> {
+  // The mock holds one account per device, so this only catches reusing that one's email.
+  if (readMock()?.email === input.email) return { ok: false, reason: 'email_taken' }
   const child: MockChild = {
     childId: mockUuid(),
     nickname: input.nickname,
+    email: input.email,
     pin: input.pin,
     attempts: 0,
     locked: false,
@@ -395,7 +408,7 @@ async function mockCreateChild(input: CreateChildInput): Promise<{ childId: stri
     faceDescriptor: null,
   }
   writeMock(child)
-  return { childId: child.childId }
+  return { ok: true, childId: child.childId }
 }
 async function mockFinalizeOnboarding(): Promise<{ sessionId: string; sessionNumber: number }> {
   return { sessionId: mockUuid(), sessionNumber: 1 }

@@ -7,6 +7,8 @@ import { ROUTES, progressFor } from '../flow'
 import { useOnboarding, deriveAgeGroup } from '../state/onboardingStore'
 import { api } from '../lib/api'
 
+const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
 export default function S03Profile() {
   const nav = useNavigate()
   const { t } = useTranslation()
@@ -39,18 +41,26 @@ export default function S03Profile() {
     if (!ageGroup) return setError(t('s03.errDob'))
     if (s.pin.length !== 4) return setError(t('s03.errPinLength'))
     if (s.pin !== s.pinConfirm) return setError(t('s03.errPinMismatch'))
+    const email = s.email.trim().toLowerCase()
+    if (!EMAIL_PATTERN.test(email)) return setError(t('s03.errEmail'))
 
     setBusy(true)
     try {
-      const { childId } = await api.createChild({
+      const created = await api.createChild({
         emis: s.emis,
         language: s.language,
         nickname: s.nickname.trim(),
         ageGroup,
         pin: s.pin,
+        email,
       })
-      // Persist childId + ageGroup; wipe DOB/PIN from memory immediately.
-      s.commitChild(childId, ageGroup)
+      if (!created.ok) {
+        setError(t('s03.errEmailTaken'))
+        setBusy(false)
+        return
+      }
+      // Persist childId + ageGroup; wipe DOB/PIN/email from memory immediately.
+      s.commitChild(created.childId, ageGroup)
       nav(ROUTES.parentConsent)
     } catch (err) {
       // This used to report errDob for EVERY failure, so a network timeout or a cold
@@ -150,6 +160,26 @@ export default function S03Profile() {
             <div className="note-card teal" style={{ marginTop: '0.6rem' }}>
               <span className="note-card-icon">💡</span>
               <span>{t('s03.dobNote')}</span>
+            </div>
+          </div>
+
+          <div className="sc-anim-4">
+            <div className="field-label">✉️ {t('s03.email')}</div>
+            <input
+              className="sc-input"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={254}
+              placeholder={t('s03.emailPlaceholder')}
+              value={s.email}
+              onChange={(e) => s.setEmail(e.target.value)}
+            />
+            <div className="note-card teal" style={{ marginTop: '0.6rem' }}>
+              <span className="note-card-icon">💡</span>
+              <span>{t('s03.emailNote')}</span>
             </div>
           </div>
 
