@@ -19,6 +19,7 @@ import {
 } from '../data/clusters'
 import { ROUTES, redEmergencyPath, subclusterPath } from '../flow'
 import { api } from '../lib/api'
+import { speakNow, useSpeakKeys } from '../speech/useSpeak'
 
 /** The issue awaiting its "how does that feel?" answer before it enters the basket. */
 interface Pending {
@@ -48,6 +49,8 @@ export default function IssueSelection() {
   const [pending, setPending] = useState<Pending | null>(null)
   const [redIssueId, setRedIssueId] = useState<string | null>(null)
   const [composerOpen, setComposerOpen] = useState(false)
+  // Items are not read out. The spoken intro says "up to 3", matching BASKET_MAX.
+  useSpeakKeys(sub ? [`sessionSpeech.subs.${sub.id}`, 'sessionSpeech.c03Intro'] : [])
 
   useEffect(() => {
     if (!sub) return
@@ -115,6 +118,7 @@ export default function IssueSelection() {
     }
     chat.user(itemText(rec.iss.id))
     setPending({ issueId: rec.iss.id, flag: rec.iss.f })
+    speakNow(['sessionSpeech.emotionQ'])
   }
 
   const confirmEmotion = async (emotionIds: string[]) => {
@@ -181,6 +185,7 @@ export default function IssueSelection() {
     chat.user(value)
     logEvent('free_text_issue', `${sub.id} · ${value.length} chars`)
     setPending({ issueId: nextFreeId(), flag: false, freeText: value })
+    speakNow(['sessionSpeech.emotionQ'])
   }
 
   const confirmRed = () => {

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useOnboarding } from '../state/onboardingStore'
 import { audioTts } from '../speech/audioTts'
-import { hasTapLines, linesFor } from '../speech/spokenKeys'
+import { hasTapLines, linesFor, speaksInSession } from '../speech/spokenKeys'
 
 /**
  * The always-reachable mute control, plus a one-time headphones tip.
@@ -20,7 +20,8 @@ export default function VoiceControls() {
   const hintSeen = useOnboarding((s) => s.speechHintSeen)
   const markHintSeen = useOnboarding((s) => s.markSpeechHintSeen)
 
-  const speaksHere = linesFor(pathname, 'auto').length > 0 || hasTapLines(pathname)
+  const speaksHere =
+    linesFor(pathname, 'auto').length > 0 || hasTapLines(pathname) || speaksInSession(pathname)
   const showHint = speaksHere && speechOn && !hintSeen
 
   useEffect(() => {

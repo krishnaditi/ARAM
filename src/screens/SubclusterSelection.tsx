@@ -8,6 +8,7 @@ import { useChatScript } from '../lib/useChatScript'
 import { useSession } from '../state/sessionStore'
 import { findCluster, subItems } from '../data/clusters'
 import { ROUTES, issuesPath } from '../flow'
+import { useSpeakKeys } from '../speech/useSpeak'
 
 /** C02 — having chosen a cluster, the child narrows it to one sub-cluster. */
 export default function SubclusterSelection() {
@@ -19,6 +20,12 @@ export default function SubclusterSelection() {
   const instant = useSession((s) => s.instant)
   const [showOptions, setShowOptions] = useState(false)
   const [picked, setPicked] = useState<string | null>(null)
+  // The sub-cluster options are left for the child to read; only the question is spoken.
+  useSpeakKeys(
+    cluster
+      ? [`sessionSpeech.desc.${cluster.id}`, `sessionSpeech.pill.${cluster.id}`, 'sessionSpeech.c02Pick']
+      : [],
+  )
 
   useEffect(() => {
     if (!cluster) return

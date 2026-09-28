@@ -10,6 +10,15 @@ import { useOnboarding } from '../state/onboardingStore'
 import { CLUSTERS } from '../data/clusters'
 import { subclusterPath } from '../flow'
 import { api } from '../lib/api'
+import { useSpeakKeys } from '../speech/useSpeak'
+
+const SPOKEN = [
+  'sessionSpeech.c01Greet1',
+  'sessionSpeech.c01Greet2',
+  'sessionSpeech.c01Greet3',
+  'sessionSpeech.c01Choose',
+  ...CLUSTERS.map((c) => `sessionSpeech.names.${c.id}`),
+]
 
 const DEV: DevInfo = {
   screenId: 'C01',
@@ -37,6 +46,7 @@ export default function ClusterSelection() {
   const instant = useSession((s) => s.instant)
   const [showOptions, setShowOptions] = useState(false)
   const [picked, setPicked] = useState<string | null>(null)
+  useSpeakKeys(SPOKEN)
 
   // Opens the SESSION row once per sitting. C01 is also where the child lands when
   // they back out of a sub-cluster or tap "I want to look at more first", so this must

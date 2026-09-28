@@ -9,6 +9,7 @@ import { amberCount, useSession } from '../state/sessionStore'
 import { useOnboarding } from '../state/onboardingStore'
 import { ROUTES } from '../flow'
 import { api } from '../lib/api'
+import { useSpeakKeys } from '../speech/useSpeak'
 
 type Phase = 'review' | 'empty' | 'confirmed'
 
@@ -31,6 +32,10 @@ export default function BasketReview() {
   const [showOptions, setShowOptions] = useState(false)
 
   const amber = amberCount(basket)
+  // Only the two review bubbles are spoken; the chosen topics are left for the child to read.
+  useSpeakKeys(
+    phase === 'review' && basket.length > 0 ? ['sessionSpeech.basketHere', 'sessionSpeech.basketReady'] : [],
+  )
 
   // Re-runs whenever the basket changes, so removing an item replays the review
   // with the new list — the same behaviour the prototype got from re-rendering.

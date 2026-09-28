@@ -86,6 +86,9 @@ LINE_RE = re.compile(
     r"\s*tier:\s*'(?P<tier>\w)'\s*,?\s*\}"
 )
 ENABLED_RE = re.compile(r"ENABLED_TIERS:\s*Tier\[\]\s*=\s*\[(?P<body>[^\]]*)\]")
+# The session chat's lines depend on what the child taps, so spokenKeys.ts names a whole
+# i18n section instead of listing them; every string in it gets a clip.
+SECTION_RE = re.compile(r"SESSION_SPEECH_SECTION\s*=\s*'(?P<name>[\w.]+)'")
 
 # Emoji live in the JSX, not the strings, but strip defensively — a stray symbol read aloud
 # as "sparkles" in the middle of a consent sentence is jarring.
@@ -121,10 +124,32 @@ def load_manifest() -> list[str]:
                 seen.add(k)
                 keys.append(k)
 
+    section_match = SECTION_RE.search(src)
+    if section_match:
+        name = section_match.group("name")
+        en = json.loads((I18N / "en.json").read_text(encoding="utf-8"))
+        node = en
+        for part in name.split("."):
+            node = node.get(part) if isinstance(node, dict) else None
+        if not isinstance(node, dict):
+            die(f"section '{name}' named in {MANIFEST} is missing from en.json")
+        for k in leaf_keys(node, name):
+            if k not in seen:
+                seen.add(k)
+                keys.append(k)
+
     if not keys:
         die(f"parsed 0 keys from {MANIFEST} — the authored format may have changed")
     print(f"manifest: {len(keys)} keys across tiers {sorted(enabled)}")
     return keys
+
+
+def leaf_keys(node: dict, prefix: str) -> list[str]:
+    out: list[str] = []
+    for k, v in node.items():
+        path = f"{prefix}.{k}"
+        out.extend(leaf_keys(v, path) if isinstance(v, dict) else [path])
+    return out
 
 
 def lookup(strings: dict, key: str) -> str | None:

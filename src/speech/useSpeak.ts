@@ -29,6 +29,26 @@ export function useAutoSpeak(): void {
   }, [pathname, language, speechOn])
 }
 
+/** Speaks the given keys on entry and whenever they change. For the session chat, where
+ *  what ARAM says depends on what the child tapped, so a per-route list can't hold it. */
+export function useSpeakKeys(keys: string[]): void {
+  const language = useOnboarding((s) => s.language)
+  const speechOn = useOnboarding((s) => s.speechOn)
+  const joined = keys.join('|')
+
+  useEffect(() => {
+    if (!speechOn || !joined) return
+    void audioTts.speak(joined.split('|'), language)
+    return () => audioTts.cancel()
+  }, [joined, language, speechOn])
+}
+
+/** Speaks right now, in response to a tap, if the child has voice on. Replaces anything playing. */
+export function speakNow(keys: string[]): void {
+  const { speechOn, language } = useOnboarding.getState()
+  if (speechOn) void audioTts.speak(keys, language)
+}
+
 /** Drives the listen button on tap-only screens (Emergency, S11). */
 export function useTapSpeak(): { available: boolean; playing: boolean; toggle: () => void } {
   const { pathname } = useLocation()
