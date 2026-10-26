@@ -343,7 +343,14 @@
       "redScreen2": "I'm staying right here with you. You are not alone in this.",
       "redScreen3": "I'm going to connect you to someone who can help, right now.",
       "redScreenGo": "Continue to get help →",
-      "leaveConfirm": "Leave this session? The topics you've picked so far won't be saved."
+      "leaveConfirm": "Leave this session? The topics you've picked so far won't be saved.",
+      "chatPlaceholder": "Type your reply…",
+      "chatError": "I couldn't reply just now. Please try again.",
+      "chatBusy": "Lots of people are talking to me right now. Please wait a moment and try again.",
+      "chatUnavailable": "Chat isn't set up on this device yet. Please ask a teacher.",
+      "chatRetry": "↻ Try again",
+      "chatHelp": "You don't have to go through this alone. You can call Tele-MANAS on 14416 or Childline on 1098, free, any time.",
+      "chatHelpGo": "See helplines"
     },
     "names": {
       "school": "School & Daily Life",

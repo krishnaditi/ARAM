@@ -27,6 +27,7 @@ import ClusterSelection from './screens/ClusterSelection'
 import SubclusterSelection from './screens/SubclusterSelection'
 import IssueSelection from './screens/IssueSelection'
 import BasketReview from './screens/BasketReview'
+import CounsellorChat from './screens/CounsellorChat'
 import RedEmergency from './screens/RedEmergency'
 
 /** New/returning-user split: a device with a CHILD record starts at PIN login,
@@ -147,6 +148,14 @@ export default function App() {
           element={
             <RequireAccount>
               <BasketReview />
+            </RequireAccount>
+          }
+        />
+        <Route
+          path={ROUTES.chat}
+          element={
+            <RequireAccount>
+              <CounsellorChat />
             </RequireAccount>
           }
         />

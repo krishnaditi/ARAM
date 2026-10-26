@@ -11,6 +11,8 @@ import { useSession } from '../state/sessionStore'
 interface ComposerProps {
   placeholder: string
   onSend: (value: string) => void
+  /** Shortest message accepted. Defaults to MIN_FREE_TEXT; the chat accepts "ok". */
+  minLength?: number
 }
 
 interface SessionFrameProps {
@@ -78,7 +80,7 @@ export default function SessionFrame({
     }
   }, [composerActive])
 
-  const canSend = composerActive && draft.trim().length >= MIN_FREE_TEXT
+  const canSend = composerActive && draft.trim().length >= (composer?.minLength ?? MIN_FREE_TEXT)
   const send = () => {
     if (!canSend || !composer) return
     const value = draft.trim()

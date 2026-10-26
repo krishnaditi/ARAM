@@ -25,7 +25,6 @@ export default function BasketReview() {
   const basket = useSession((s) => s.basket)
   const sessionId = useSession((s) => s.sessionId)
   const removeFromBasket = useSession((s) => s.removeFromBasket)
-  const resetSession = useSession((s) => s.resetSession)
   const logEvent = useSession((s) => s.logEvent)
   const childId = useOnboarding((s) => s.childId)
   const [phase, setPhase] = useState<Phase>('review')
@@ -110,10 +109,9 @@ export default function BasketReview() {
     })
   }
 
-  const finish = () => {
-    resetSession()
-    nav(ROUTES.home)
-  }
+  // The topics stay in the session: the counsellor chat talks them through next, and
+  // ends the session itself.
+  const finish = () => nav(ROUTES.chat)
 
   const summary = (
     <div className="sum-list">
