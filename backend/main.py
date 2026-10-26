@@ -15,6 +15,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+import counsellor
+
 # Local runs read backend/.env; deployments (Render) supply the real environment,
 # which always wins because load_dotenv never overrides variables already set.
 load_dotenv(Path(__file__).parent / ".env")
@@ -133,6 +135,25 @@ class EmailInput(BaseModel):
 class PinResetByEmail(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     new_pin: str = Field(pattern=r"^\d{4}$")
+
+
+class ChatTopic(BaseModel):
+    title: str = Field(min_length=1, max_length=500)
+    area: str = Field(min_length=1, max_length=120)
+    feelings: list[str] = Field(default_factory=list, max_length=11)
+    own_words: bool = False
+
+
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class ChatInput(BaseModel):
+    language: str = Field(pattern=r"^(en|hi|ta|te|ml)$")
+    topics: list[ChatTopic] = Field(min_length=1, max_length=3)
+    # Only the recent part of the conversation is sent, which also caps the cost.
+    messages: list[ChatTurn] = Field(default_factory=list, max_length=40)
 
 
 class ChildFaceLogin(BaseModel):
@@ -376,6 +397,23 @@ def forgot_pin_reset(payload: PinResetByEmail) -> dict[str, Any]:
             "SELECT reset_child_pin_by_email(%s, %s)", (payload.email, payload.new_pin)
         ).fetchone()
     return row[0]
+
+
+@app.post("/api/chat")
+def counsellor_chat(payload: ChatInput) -> dict[str, Any]:
+    """One counsellor reply. Stateless: the app sends the topics and the conversation so
+    far on every turn, and nothing is stored here. Errors carry a fixed code the app
+    translates; the provider's own message stays in this log."""
+    try:
+        return counsellor.reply(
+            payload.language,
+            [topic.model_dump() for topic in payload.topics],
+            [turn.model_dump() for turn in payload.messages],
+        )
+    except counsellor.CounsellorError as error:
+        logger.warning("chat failed: %s (%s)", error.code, error)
+        status = 503 if error.code in ("not_configured", "busy", "unreachable") else 502
+        raise HTTPException(status_code=status, detail=f"chat_{error.code}") from error
 
 
 @app.post("/api/students/login-face")

@@ -17,3 +17,8 @@ services:
         sync: false
       - key: FRONTEND_ORIGIN_REGEX
         sync: false
+      # Counsellor chat (backend/counsellor.py). Set the key in the Render dashboard only.
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: google/gemma-4-26b-a4b-it:free
