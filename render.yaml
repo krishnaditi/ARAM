@@ -7,7 +7,7 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
+    healthCheckPath: /live
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"
@@ -21,4 +21,4 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
-        value: google/gemma-4-26b-a4b-it:free
+        value: google/gemma-4-26b-a4b-it

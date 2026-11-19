@@ -234,13 +234,21 @@ class AdminLogin(BaseModel):
 
 def db() -> psycopg.Connection[Any]:
     try:
-        return psycopg.connect(DATABASE_URL)
+        # Fail fast: an unreachable database must give a 503, not a request that hangs.
+        return psycopg.connect(DATABASE_URL, connect_timeout=5)
     except psycopg.Error as error:
         raise HTTPException(status_code=503, detail="Database unavailable") from error
 
 
 def descriptor_distance(first: list[float], second: list[float]) -> float:
     return math.sqrt(sum((left - right) ** 2 for left, right in zip(first, second)))
+
+
+@app.get("/live")
+def live() -> dict[str, str]:
+    """Render's health check. Does not touch the database, so a chat-only deployment
+    (no DATABASE_URL) still goes live. /health below checks the database too."""
+    return {"status": "ok"}
 
 
 @app.get("/health")
