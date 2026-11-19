@@ -57,6 +57,40 @@ If the student mentions wanting to die, suicide, hurting themselves, being hit o
 - Tell them to call Tele-MANAS on 14416 (free, any time, for feelings and mental health) or Childline on 1098 (free, any time, for children who are unsafe), and to tell a trusted adult near them today.
 - Ask whether they are safe right now."""
 
+# How the app's tap-question blocks are introduced. The questions themselves are shown by
+# the app, word for word; the model must never ask them.
+BLOCK_INTROS = {
+    "feelings": "how they are feeling in their body and inside, and how their sleep and eating have been",
+    "mood": "their mood and worries over the last two weeks",
+    "topics": "how often the things they chose happen and how much they affect their day",
+    "substances": "things some young people try, like tobacco or alcohol (say it gently and without judgement)",
+    "safety": "a few important questions about how safe they feel (say it calmly, without alarming them)",
+}
+
+ASSESSMENT_SECTION = """
+
+QUICK TAP QUESTIONS
+Between parts of this chat, the app shows the student short questions they answer by tapping (body, sleep, mood, worry, substances and safety). The app asks, words and scores these itself. Never ask those questionnaire questions yourself, never mention scores, numbers, bands or risk levels, and never tell the student what their answers "mean". Use the answers only to understand them better and to choose kind words.
+What the student has answered so far:
+{summary}"""
+
+# Attached to the latest turn rather than the system prompt: the model follows the most
+# recent message far more reliably than the end of a long prompt.
+HANDOVER_NOTE = (
+    "\n\n(Note from the app, not from the student: straight after your reply, the app will show "
+    "quick tap questions about {about}. So in this reply, respond warmly to what they just said in "
+    "one or two sentences, then tell them you would like to ask a few quick questions they can "
+    "answer by tapping. Do NOT ask any question of your own in this reply.)"
+)
+
+FINISHED_INSTRUCTION = """
+
+The student has finished all the quick questions. You now have the full picture: carry on the counselling conversation as described above."""
+
+# The app's own notes to the model (after a question block) are sent as user turns that
+# start with this. They are not the student's words, so the crisis check skips them.
+APP_NOTE_PREFIX = "(The student "
+
 OPENING_INSTRUCTION = (
     "(The student has just finished choosing their topics and opened the chat. "
     "They have not typed anything yet. Begin the conversation.)"
@@ -93,11 +127,25 @@ def describe_topics(topics: list[dict]) -> str:
     return "\n".join(lines) or "(none)"
 
 
-def build_messages(language: str, topics: list[dict], history: list[dict]) -> list[dict]:
+def describe_assessment(assessment: dict | None) -> str:
+    if not assessment:
+        return ""
+    text = ASSESSMENT_SECTION.format(summary=assessment.get("summary") or "(nothing yet)")
+    if assessment.get("finished"):
+        text += FINISHED_INSTRUCTION
+    return text
+
+
+def build_messages(
+    language: str, topics: list[dict], history: list[dict], assessment: dict | None = None
+) -> list[dict]:
     system = SYSTEM_PROMPT.format(
         topics=describe_topics(topics), language=LANGUAGE_NAMES.get(language, "English")
-    )
+    ) + describe_assessment(assessment)
     turns = list(history) or [{"role": "user", "content": OPENING_INSTRUCTION}]
+    next_block = (assessment or {}).get("next_block")
+    if next_block in BLOCK_INTROS and turns[-1]["role"] == "user":
+        turns[-1] = {**turns[-1], "content": turns[-1]["content"] + HANDOVER_NOTE.format(about=BLOCK_INTROS[next_block])}
     # Most chat models expect the conversation to begin with the user, so an opening
     # turn the model wrote itself is preceded by the instruction that produced it.
     if turns[0]["role"] == "assistant":
@@ -130,12 +178,12 @@ def _merge_system(messages: list[dict]) -> list[dict]:
     return [merged, *rest]
 
 
-def reply(language: str, topics: list[dict], history: list[dict]) -> dict:
+def reply(language: str, topics: list[dict], history: list[dict], assessment: dict | None = None) -> dict:
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if not api_key:
         raise CounsellorError("not_configured", "OPENROUTER_API_KEY is not set")
     model = os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
-    messages = build_messages(language, topics, history)
+    messages = build_messages(language, topics, history, assessment)
 
     try:
         try:
@@ -160,5 +208,7 @@ def reply(language: str, topics: list[dict], history: list[dict]) -> dict:
     if not text:
         raise CounsellorError("failed", "empty reply")
 
-    latest = next((t["content"] for t in reversed(history) if t["role"] == "user"), "")
+    latest = next(
+        (t["content"] for t in reversed(history) if t["role"] == "user" and not t["content"].startswith(APP_NOTE_PREFIX)), ""
+    )
     return {"reply": text, "crisis": bool(CRISIS_PATTERN.search(latest))}

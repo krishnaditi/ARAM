@@ -149,11 +149,21 @@ class ChatTurn(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
 
 
+class AssessmentContext(BaseModel):
+    """Where the chat is in the interleaved assessment. The questions themselves are
+    asked and scored by the app; the model only gets the answers as context."""
+
+    summary: str = Field(default="", max_length=6000)
+    next_block: Literal["feelings", "mood", "topics", "substances", "safety"] | None = None
+    finished: bool = False
+
+
 class ChatInput(BaseModel):
     language: str = Field(pattern=r"^(en|hi|ta|te|ml)$")
     topics: list[ChatTopic] = Field(min_length=1, max_length=3)
     # Only the recent part of the conversation is sent, which also caps the cost.
     messages: list[ChatTurn] = Field(default_factory=list, max_length=40)
+    assessment: AssessmentContext | None = None
 
 
 class ChildFaceLogin(BaseModel):
@@ -409,6 +419,7 @@ def counsellor_chat(payload: ChatInput) -> dict[str, Any]:
             payload.language,
             [topic.model_dump() for topic in payload.topics],
             [turn.model_dump() for turn in payload.messages],
+            payload.assessment.model_dump() if payload.assessment else None,
         )
     except counsellor.CounsellorError as error:
         logger.warning("chat failed: %s (%s)", error.code, error)

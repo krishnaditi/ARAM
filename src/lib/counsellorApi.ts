@@ -22,6 +22,16 @@ export interface ChatTurn {
   content: string
 }
 
+/** Where the conversation is in the interleaved assessment (see CounsellorChat). */
+export interface AssessmentContext {
+  /** Plain-English answers so far, for the counsellor's context only. */
+  summary: string
+  /** Set when the app will show tap questions straight after this reply. */
+  next_block: 'feelings' | 'mood' | 'topics' | 'substances' | 'safety' | null
+  /** True once every block is done and the conversation is open-ended. */
+  finished: boolean
+}
+
 export type ChatResult =
   | { ok: true; reply: string; crisis: boolean }
   | { ok: false; reason: 'not_configured' | 'busy' | 'unreachable' | 'failed' }
@@ -34,6 +44,7 @@ export async function askCounsellor(
   topics: ChatTopic[],
   messages: ChatTurn[],
   signal?: AbortSignal,
+  assessment?: AssessmentContext,
 ): Promise<ChatResult> {
   if (!baseUrl) return { ok: false, reason: 'not_configured' }
   let recent = messages.slice(-MAX_TURNS)
@@ -43,7 +54,7 @@ export async function askCounsellor(
     const response = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ language, topics, messages: recent }),
+      body: JSON.stringify({ language, topics, messages: recent, assessment }),
       signal,
     })
     if (response.ok) {

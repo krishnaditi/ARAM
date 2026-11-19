@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARAM Assessment v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:#0f0f0e;min-height:100vh;display:flex;flex-direction:column}
+.shell{display:flex;flex:1;height:100vh;overflow:hidden}
+.sidebar{width:210px;background:#111;border-right:1px solid #1e1e1c;overflow-y:auto;flex-shrink:0}
+.sidebar-header{padding:14px;border-bottom:1px solid #1e1e1c;background:#1a1a18;position:sticky;top:0;z-index:10}
+.sidebar-title{color:#fff;font-size:12px;font-weight:800}
+.sidebar-sub{color:#555;font-size:10px;margin-top:2px}
+.nav-section-label{font-size:9px;font-weight:700;color:#555;letter-spacing:0.08em;text-transform:uppercase;padding:10px 14px 4px}
+.nav-item{padding:8px 14px;font-size:11px;color:#777;cursor:pointer;display:flex;align-items:center;gap:8px;border-left:2px solid transparent;transition:all 0.1s}
+.nav-item:hover{background:#1a1a18;color:#ccc}
+.nav-item.active{background:#1e1e1c;color:#fff;border-left-color:#9B6EE0}
+.nav-item-num{font-size:9px;color:#444;font-family:monospace;min-width:26px}
+.nav-flag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:auto;flex-shrink:0}
+.f-purple{background:#26215C;color:#AFA9EC}.f-amber{background:#412402;color:#FAC775}
+.f-red{background:#501313;color:#F09595}.f-green{background:#173404;color:#97C459}
+.f-gray{background:#2C2C2A;color:#B4B2A9}.f-blue{background:#042C53;color:#85B7EB}
+.main{flex:1;display:flex;overflow:hidden}
+.phone-wrap{width:420px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:#0d0d0b;border-right:1px solid #1e1e1c;gap:10px}
+.phone-meta{width:370px;display:flex;align-items:center;justify-content:space-between}
+.phone-meta-id{font-size:10px;color:#9B6EE0;font-family:monospace;font-weight:700}
+.phone-meta-pos{font-size:10px;color:#444}
+.phone{width:370px;border-radius:40px;overflow:hidden;box-shadow:0 0 0 8px #1a1a18,0 24px 80px rgba(0,0,0,0.7);display:flex;flex-direction:column;min-height:680px}
+.phone-bar{height:36px;background:rgba(255,255,255,0.97);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:10px;color:#999;flex-shrink:0}
+.phone-prog{height:3px;background:rgba(0,0,0,0.05);flex-shrink:0}
+.phone-fill{height:3px;transition:width 0.5s ease;background:linear-gradient(90deg,#9B6EE0,#D4537E)}
+.phone-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.phone-footer{padding:12px 18px 16px;border-top:1px solid rgba(0,0,0,0.05);flex-shrink:0;background:rgba(255,255,255,0.95)}
+.phone-controls{width:370px;display:flex;gap:8px}
+.ctrl{font-size:10px;padding:6px 0;border-radius:6px;border:1px solid #1e1e1c;background:#111;color:#666;cursor:pointer;flex:1;text-align:center;transition:all 0.1s}
+.ctrl:hover{background:#1e1e1c;color:#fff}
+.ctrl.r{background:#9B6EE022;border-color:#9B6EE044;color:#9B6EE0}
+.branch-box{width:370px;background:#111;border:1px solid #1e1e1c;border-radius:10px;padding:10px 12px}
+.branch-title{font-size:9px;font-weight:700;color:#444;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
+.branch-row{display:flex;gap:6px;padding:3px 0;font-size:10px;align-items:flex-start}
+.branch-cond{font-family:monospace;color:#EF9F27;min-width:110px;flex-shrink:0;font-size:9px;padding-top:1px}
+.branch-arr{color:#333;flex-shrink:0}
+.branch-dest{color:#777;flex:1;line-height:1.4}
+.dev{flex:1;overflow-y:auto;padding:18px;background:#0a0a09;display:flex;flex-direction:column;gap:12px}
+.dev-card{background:#111;border:1px solid #1e1e1c;border-radius:10px;overflow:hidden}
+.dev-head{padding:9px 14px;background:#161614;border-bottom:1px solid #1e1e1c;display:flex;align-items:center;gap:8px}
+.dev-head-title{font-size:10px;font-weight:700;color:#777;letter-spacing:0.06em;text-transform:uppercase}
+.dev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dev-body{padding:12px 14px}
+.dev-row{display:flex;gap:10px;margin-bottom:8px}
+.dev-k{font-size:10px;font-family:monospace;color:#9B6EE0;min-width:150px;line-height:1.5;flex-shrink:0}
+.dev-v{font-size:10px;color:#777;line-height:1.6;flex:1}
+.dev-v code{font-family:monospace;background:#1a1a18;padding:1px 5px;border-radius:3px;color:#EF9F27;font-size:9px}
+.dev-tr{display:flex;gap:6px;margin-bottom:6px;align-items:flex-start}
+.dev-tc{font-family:monospace;color:#E24B4A;font-size:9px;min-width:140px;flex-shrink:0;padding-top:1px}
+.dev-ta{color:#777;flex:1;font-size:10px;line-height:1.5}
+.dev-note{font-size:10px;color:#444;font-style:italic;line-height:1.6;margin-top:6px;padding-top:6px;border-top:1px solid #1a1a18}
+.dev-band-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:9px}
+.dev-band-table th{background:#1a1a18;color:#9B6EE0;padding:5px 8px;text-align:left;font-weight:700}
+.dev-band-table td{padding:5px 8px;color:#888;border-bottom:1px solid #1a1a18}
+.dev-band-table tr:last-child td{border-bottom:none}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+@keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes checkBounce{0%{transform:scale(0) rotate(-10deg)}60%{transform:scale(1.2) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes redPulse{0%,100%{background:linear-gradient(160deg,#FCEBEB,#FFF0F8)}50%{background:linear-gradient(160deg,#F7C1C1,#FFE0EC)}}
+@keyframes bodyPartPop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* BACKGROUNDS */
+.bg-soft{background:linear-gradient(160deg,#F0EEFF,#FFE8F8,#E8F8FF);flex:1;display:flex;flex-direction:column;overflow-y:auto}
+.bg-light{background:#F4F6FF;flex:1;display:flex;flex-direction:column;overflow-y:auto}
+.bg-white{background:#fff;flex:1;display:flex;flex-direction:column;overflow-y:auto}
+.bg-red{background:linear-gradient(160deg,#FCEBEB,#FFF0F8);flex:1;display:flex;flex-direction:column;animation:redPulse 3s ease-in-out infinite}
+
+.sc{padding:20px 16px;flex:1;display:flex;flex-direction:column;gap:12px}
+.sc-sm{padding:16px;flex:1;display:flex;flex-direction:column;gap:10px}
+
+/* PROGRESS BAR */
+.assess-prog-wrap{padding:0 16px 4px}
+.assess-prog-bar{background:#E8E8F8;border-radius:99px;height:6px;overflow:hidden}
+.assess-prog-fill{height:6px;border-radius:99px;background:linear-gradient(90deg,#9B6EE0,#D4537E);transition:width 0.5s ease}
+.assess-prog-label{font-size:10px;color:#aaa;font-weight:700;text-align:center;margin-top:3px}
+
+/* THINKING ABOUT PILL */
+.thinking-pill{background:linear-gradient(135deg,rgba(155,110,224,0.08),rgba(212,83,126,0.06));border:1px solid rgba(155,110,224,0.18);border-radius:12px;padding:10px 14px;font-size:11px;color:#555;font-weight:700;line-height:1.5;animation:fadeUp 0.4s ease both;display:flex;align-items:center;gap:6px}
+.thinking-icon{font-size:14px;flex-shrink:0}
+
+/* WARM DIALOGUE */
+.warm-q{font-size:14px;font-weight:800;color:#1a1a18;text-align:center;line-height:1.4;letter-spacing:-0.2px;animation:fadeUp 0.4s 0.08s ease both}
+.warm-sub{font-size:11px;color:#888;text-align:center;font-weight:600;animation:fadeUp 0.4s 0.14s ease both}
+.warm-note{background:#FFFBF0;border:1px solid #F5D78E;border-radius:12px;padding:10px 14px;font-size:11px;color:#7A5800;font-weight:700;text-align:center;animation:fadeUp 0.4s 0.5s ease both}
+
+/* BODY FIGURE SCREEN */
+.body-screen-layout{display:flex;gap:12px;align-items:flex-start}
+.body-figure-wrap{flex:0 0 120px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.body-figure-hint{font-size:10px;color:#aaa;font-weight:700;text-align:center;display:flex;align-items:center;gap:4px}
+.body-parts-list{flex:1;display:flex;flex-direction:column;gap:6px}
+.body-part-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid #EEEEF8;background:#fff;cursor:pointer;transition:all 0.15s;font-size:12px;font-weight:700;color:#333;animation:fadeUp 0.4s ease both}
+.body-part-item:hover{border-color:#C8C0F0;background:#F8F6FF}
+.body-part-item.sel{border-color:#9B6EE0;background:linear-gradient(135deg,rgba(155,110,224,0.08),rgba(212,83,126,0.05))}
+.body-part-cb{width:20px;height:20px;border-radius:5px;border:2px solid #D0D0E8;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.body-part-cb.on{background:#9B6EE0;border-color:#9B6EE0;animation:checkBounce 0.3s ease both}
+.body-part-cb.on::after{content:'✓';color:#fff;font-size:11px;font-weight:900}
+
+/* INTENSITY ROW */
+.intensity-wrap{background:linear-gradient(135deg,rgba(155,110,224,0.06),rgba(212,83,126,0.04));border-radius:14px;padding:14px;border:1px solid rgba(155,110,224,0.12);animation:fadeUp 0.4s 0.3s ease both}
+.intensity-title{font-size:12px;font-weight:800;color:#555;text-align:center;margin-bottom:10px}
+.intensity-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.intensity-card{background:#fff;border-radius:10px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:2px solid #F0F0F8;transition:all 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.intensity-card:hover{border-color:#C8C0F0;transform:translateY(-2px)}
+.intensity-card.sel{border-color:#9B6EE0;background:linear-gradient(135deg,rgba(155,110,224,0.08),rgba(212,83,126,0.05));transform:translateY(-2px)}
+.intensity-emoji{font-size:20px}
+.intensity-num{font-size:14px;font-weight:900;color:#1a1a18}
+.intensity-label{font-size:8px;font-weight:700;color:#aaa;text-align:center}
+
+/* EMOTION SCREEN */
+.emotion-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.em-card{background:#fff;border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all 0.15s;border:2px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:fadeUp 0.4s ease both}
+.em-card:hover{border-color:#9B6EE0;background:#F8F6FF;transform:translateY(-2px)}
+.em-card.sel{border-color:#9B6EE0;background:#F0EEFF;transform:translateY(-2px)}
+.em-card-icon{font-size:30px}
+.em-card-label{font-size:10px;font-weight:800;color:#555;text-align:center}
+
+/* OPTION CARDS (for wellbeing questions) */
+.option-card{background:#fff;border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;border:2px solid #F0F0F8;box-shadow:0 1px 3px rgba(0,0,0,0.04);font-size:13px;font-weight:700;color:#333;animation:fadeUp 0.4s ease both}
+.option-card:hover{border-color:#C8C0F0;background:#F8F6FF}
+.option-card.sel{border-color:#9B6EE0;background:linear-gradient(135deg,rgba(155,110,224,0.08),rgba(212,83,126,0.04))}
+.option-radio{width:22px;height:22px;border-radius:50%;border:2px solid #D0D0E8;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.option-radio.on{background:#9B6EE0;border-color:#9B6EE0}
+.option-radio.on::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff;display:block}
+.option-score{font-size:10px;color:#ddd;font-weight:700;margin-left:auto;font-family:monospace}
+
+/* YES/NO */
+.yn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.yn-card{background:#fff;border-radius:14px;padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all 0.15s;border:2px solid #F0F0F8;box-shadow:0 2px 8px rgba(0,0,0,0.06);animation:fadeUp 0.4s ease both}
+.yn-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.1)}
+.yn-card.no{border-color:#1D9E75;background:#F0FFF8}
+.yn-card.yes-bad{border-color:#E24B4A;background:#FFF0F0;animation:redPulse 2s ease-in-out infinite}
+.yn-icon{font-size:30px}
+.yn-label{font-size:13px;font-weight:800;color:#1a1a18}
+
+/* SAFETY OPTIONS */
+.safety-opt{background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;border:2px solid #F0F0F8;box-shadow:0 1px 4px rgba(0,0,0,0.05);animation:fadeUp 0.4s ease both}
+.safety-opt:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.safety-opt.sel-safe{border-color:#1D9E75;background:#F0FFF8}
+.safety-opt.sel-unsafe{border-color:#E24B4A;background:#FFF0F0}
+.safety-opt-icon{font-size:24px;flex-shrink:0}
+.safety-opt-title{font-size:12px;font-weight:800;color:#1a1a18}
+.safety-opt-sub{font-size:10px;color:#aaa;font-weight:600;margin-top:2px}
+
+/* GAD DOTS */
+.gad-dots{display:flex;gap:5px;justify-content:center;align-items:center;animation:fadeUp 0.4s ease both}
+.gad-dot{width:8px;height:8px;border-radius:50%;background:#E0E0E8;transition:all 0.25s}
+.gad-dot.done{background:#9B6EE0}
+.gad-dot.cur{background:linear-gradient(135deg,#9B6EE0,#D4537E);width:22px;border-radius:4px}
+
+/* CSSRS CARD */
+.cssrs-card{background:#fff;border-radius:14px;padding:16px;border:1.5px solid #F0F0F8;box-shadow:0 2px 8px rgba(0,0,0,0.05);animation:fadeUp 0.4s ease both}
+.cssrs-warm{font-size:13px;font-weight:800;color:#1a1a18;line-height:1.5;margin-bottom:8px}
+.cssrs-warm-sub{font-size:11px;color:#888;font-weight:600;margin-bottom:12px}
+.cssrs-dev-note{font-size:9px;font-family:monospace;color:#C8C0F0;margin-top:8px;font-weight:700}
+
+/* ALERT CARD */
+.alert-card{background:linear-gradient(135deg,#FCEBEB,#FFF0F8);border:1.5px solid #F09595;border-radius:14px;padding:14px;text-align:center;animation:fadeUp 0.4s ease both}
+.alert-card-icon{font-size:28px;animation:pulse 1.5s ease-in-out infinite;display:block;margin-bottom:8px}
+.alert-card-title{font-size:13px;font-weight:900;color:#791F1F;margin-bottom:4px}
+.alert-card-body{font-size:11px;color:#A32D2D;font-weight:600;line-height:1.5}
+
+/* NOTE CARDS */
+.note-card{border-radius:12px;padding:10px 14px;font-size:11px;line-height:1.6;display:flex;gap:8px;align-items:flex-start;font-weight:600;animation:fadeUp 0.4s ease both}
+.nc-purple{background:rgba(155,110,224,0.07);border:1px solid rgba(155,110,224,0.18);color:#5045A0}
+.nc-amber{background:#FFFBF0;border:1px solid #F5D78E;color:#7A5800}
+.nc-red{background:#FCEBEB;border:1px solid #F09595;color:#791F1F}
+.nc-green{background:#F0FFF6;border:1px solid #A8DFB8;color:#1A6B35}
+.nc-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+
+/* COMPOSITE SCORE */
+.score-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(155,110,224,0.15);border:1.5px solid rgba(155,110,224,0.2);animation:popIn 0.5s ease both;text-align:center}
+.score-total{font-size:44px;font-weight:900;background:linear-gradient(135deg,#9B6EE0,#D4537E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-2px}
+.score-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:12px 0;gap:2px}
+.score-seg{height:10px;border-radius:2px;transition:flex 0.6s ease}
+.band-card{border-radius:14px;padding:14px 16px}
+.band-card-label{font-size:10px;font-weight:800;opacity:0.8;margin-bottom:4px}
+.band-card-name{font-size:18px;font-weight:900;letter-spacing:-0.3px}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px}
+.btn{border-radius:14px;padding:13px;font-size:13px;font-weight:800;text-align:center;cursor:pointer;border:none;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Nunito',sans-serif;flex:1}
+.btn-p{background:linear-gradient(135deg,#9B6EE0,#D4537E);color:#fff;box-shadow:0 4px 14px rgba(155,110,224,0.35)}
+.btn-p:hover{opacity:0.92;transform:translateY(-1px)}
+.btn-back{background:#F4F3EF;color:#666;flex:0.7}
+.btn-back:hover{background:#EEEDFE;color:#9B6EE0}
+.btn-d{background:#E8E8F0;color:#aaa;cursor:not-allowed}
+
+/* ===== v3 additions ===== */
+:root{--asmt-chrome:#0f0f0e;--asmt-accent:#9B6EE0;--asmt-panel:#111;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);height:100%}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--asmt-chrome:#0f0f0e;--asmt-panel:#111}}
+:root[data-theme="dark"]{--asmt-chrome:#0f0f0e;--asmt-panel:#111}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--asmt-chrome);height:100%;min-height:0}
+.shell{height:100%}
+.phone{position:relative;max-width:100%}
+.phone-body.no-anim *{animation:none!important}
+.q-block{background:rgba(255,255,255,0.7);border-radius:14px;padding:12px;border:1px solid rgba(155,110,224,0.14);animation:fadeUp 0.35s ease both}
+.q-domain{font-size:10px;color:#9B6EE0;font-weight:800;margin-bottom:4px}
+.option-list{display:flex;flex-direction:column;gap:6px}
+.yn-card.yes-sel{border-color:#9B6EE0;background:#F4F0FF}
+.asmt-rns{text-align:center;font-size:11px;color:#77778f;font-weight:700;padding:9px;border-radius:10px;cursor:pointer;border:1.5px dashed #D8D8E8;background:rgba(255,255,255,0.5)}
+.asmt-rns:hover{border-color:#C8C0F0}
+.asmt-rns.sel{border-style:solid;border-color:#9B6EE0;color:#5045A0;background:#F4F0FF}
+.asmt-mini-row{display:flex;justify-content:center;margin-top:9px}
+.asmt-mini{font-size:11px;color:#8A5CD6;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.asmt-gloss-btn{font-size:10px;color:#8A5CD6;font-weight:800;cursor:pointer;display:inline-block;margin-bottom:8px;text-decoration:underline;text-underline-offset:2px}
+.asmt-gloss{background:#F4F0FF;border-radius:10px;padding:8px 10px;font-size:11px;color:#5045A0;font-weight:700;margin-bottom:8px;line-height:1.5}
+.asmt-sub-row{background:#fff;border-radius:12px;padding:9px 10px;display:flex;align-items:center;gap:8px;border:1.5px solid #F0F0F8}
+.asmt-sub-em{font-size:22px;flex-shrink:0}
+.asmt-sub-txt{flex:1;min-width:0}
+.asmt-sub-name{font-size:12px;font-weight:800;color:#1a1a18}
+.asmt-sub-local{font-size:10px;color:#8a8a99;font-weight:600;line-height:1.35}
+.asmt-chip{font-size:11px;font-weight:800;padding:6px 11px;border-radius:99px;border:1.5px solid #E0E0EE;background:#fff;cursor:pointer;color:#555;flex-shrink:0}
+.asmt-chip.on-no{border-color:#1D9E75;background:#F0FFF8;color:#1A6B35}
+.asmt-chip.on-yes{border-color:#9B6EE0;background:#F4F0FF;color:#5045A0}
+.asmt-none{background:#fff;border:2px solid #D8F0E4;border-radius:14px;padding:13px;text-align:center;font-size:13px;font-weight:800;color:#1A6B35;cursor:pointer}
+.asmt-none.sel{border-color:#1D9E75;background:#F0FFF8}
+.asmt-dist-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:3px}
+.asmt-dist{padding:10px 0;font-size:12px;font-weight:900;text-align:center;border-radius:8px;background:#fff;border:1.5px solid #ECECF6;cursor:pointer;color:#555}
+.asmt-dist.sel{background:linear-gradient(135deg,#9B6EE0,#D4537E);color:#fff;border-color:transparent}
+.asmt-pause{position:absolute;inset:36px 0 0 0;background:rgba(244,246,255,0.98);display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px;gap:14px;text-align:center;z-index:5}
+.asmt-pause.on{display:flex}
+.asmt-help{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:11px 12px;border:1.5px solid #F09595;text-decoration:none;color:#791F1F;font-weight:800;font-size:12px;width:100%;text-align:left}
+.asmt-help-num{margin-left:auto;font-size:17px;font-weight:900}
+.asmt-bar-tools{display:flex;align-items:center;gap:8px}
+.asmt-bar-btn{cursor:pointer;font-size:12px;line-height:1}
+.asmt-lang{display:flex;gap:2px;font-weight:800}
+.asmt-lang span{padding:2px 5px;border-radius:4px;cursor:pointer;color:#999}
+.asmt-lang span.on{background:#9B6EE0;color:#fff}
+.asmt-banner{background:#FFFBF0;color:#7A5800;font-size:10px;font-weight:700;padding:6px 12px;text-align:center;border-bottom:1px solid #F5D78E}
+.asmt-devctl{padding:12px 14px 18px;border-top:1px solid #1e1e1c}
+.asmt-devctl label{display:block;font-size:10px;color:#888;margin:9px 0 4px}
+.asmt-devctl select{width:100%;background:#1a1a18;color:#ddd;border:1px solid #2a2a28;border-radius:6px;padding:6px;font-family:inherit;font-size:11px}
+.asmt-devctl .chk{display:flex;align-items:center;gap:6px;font-size:10px;color:#999;margin-top:7px}
+.f-cond{background:#10283F;color:#85B7EB}
+[role=button]:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #9B6EE0;outline-offset:2px}
+.dev-v strong{color:#bbb}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:1100px){
+  .shell{flex-direction:column;height:auto;overflow:visible}
+  .sidebar{width:100%;max-height:260px}
+  .main{flex-direction:column;overflow:visible}
+  .phone-wrap{width:100%;border-right:none;padding:16px 10px}
+  .phone-meta,.phone-controls,.branch-box{width:100%;max-width:370px}
+  .phone{width:100%;max-width:370px}
+  .dev{overflow:visible}
+  .dev-k{min-width:110px}
+}
+
+.dev-card{flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">ARAM Assessment v3</div>
+    <div class="sidebar-sub">Safety cascade, ASSIST-Y, fixed scoring</div>
+  </div>
+  <div id="asmt-nav"></div>
+  <div class="asmt-devctl" id="asmt-devctl"></div>
+</div>
+<div class="main">
+  <div class="phone-wrap">
+    <div class="phone-meta">
+      <div class="phone-meta-id" id="asmt-sid">A00</div>
+      <div class="phone-meta-pos" id="asmt-spos">Assessment</div>
+    </div>
+    <div class="phone">
+      <div class="phone-bar">
+        <span>9:41</span>
+        <span style="font-size:11px;font-weight:900;background:linear-gradient(135deg,#9B6EE0,#D4537E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">ARAM</span>
+        <span class="asmt-bar-tools">
+          <span class="asmt-bar-btn" role="button" tabindex="0" aria-label="Read the question aloud" title="Read aloud" onclick="asmt_speak()">🔊</span>
+          <span class="asmt-lang"><span id="asmt-lang-en" class="on" role="button" tabindex="0" onclick="asmt_lang('en')">EN</span><span id="asmt-lang-ta" role="button" tabindex="0" onclick="asmt_lang('ta')">தமிழ்</span></span>
+        </span>
+      </div>
+      <div class="phone-prog"><div class="phone-fill" id="asmt-pfill" style="width:0%"></div></div>
+      <div class="phone-body" id="asmt-pb"></div>
+      <div class="phone-footer" id="asmt-pf"></div>
+      <div class="asmt-pause" id="asmt-pause" role="dialog" aria-label="Break"></div>
+    </div>
+    <div class="phone-controls">
+      <div class="ctrl" role="button" tabindex="0" onclick="asmt_prev()">Prev</div>
+      <div class="ctrl" role="button" tabindex="0" onclick="asmt_next()">Next</div>
+      <div class="ctrl r" role="button" tabindex="0" onclick="asmt_restart()">Restart</div>
+    </div>
+    <div class="branch-box">
+      <div class="branch-title">Branch logic</div>
+      <div id="asmt-bc" style="font-size:10px;color:#444">Select a screen</div>
+    </div>
+  </div>
+  <div class="dev" id="asmt-devpanel"></div>
+</div>
+</div>
+<script>
+/* ARAM Assessment module v3
+   Merge-safe: every function is prefixed asmt_, every DOM id is prefixed asmt-,
+   state lives in asmtS, config in asmtCfg. Direct document.getElementById calls only,
+   no shared $() helper. */
+
+// ===================== CONFIG (clinical team edits here, not in code) =====================
+var asmtCfg = {
+  total_max: 24,                       // body 0-4 + sleep 0-4 + appetite 0-4 + PHQ-2 0-6 + GAD-2 0-6
+  band_pct: [30, 55, 78],              // ILLUSTRATIVE cut-points, to be set by clinical team
+  band_names: ['Green', 'Amber', 'Orange', 'Red Non-Emergency'],
+  band_colors: ['#1D9E75', '#EF9F27', '#D85A30', '#E24B4A'],
+  phq2_cut: 3,
+  gad2_cut: 3,
+  // PLACEHOLDER: adult WHO ASSIST weights and cut-offs. Replace with ASSIST-Y V1.0
+  // weightings for the 10-14 and 15-17 versions before build.
+  assist_placeholder: true,
+  assist: {
+    freq: [0, 2, 3, 4, 6], crave: [0, 3, 4, 5, 6], prob: [0, 4, 5, 6, 7], fail: [0, 5, 6, 7, 8],
+    concern: [0, 6, 3], cut: [0, 6, 3],
+    cut_alcohol: [11, 27], cut_other: [4, 27]
+  }
+};
+
+// ===================== REFERENCE DATA =====================
+var ASMT_BASKETS = {
+  study: { label: 'Study pressure', issues: [
+    { id: 'C1-SC1-I01', t: "I feel like there's too much to study or remember." }] },
+  study_sub: { label: 'Study pressure + substance coping', issues: [
+    { id: 'C1-SC1-I01', t: "I feel like there's too much to study or remember." },
+    { id: 'sub6', t: 'I use substances to feel numb or forget something painful.' }] },
+  home: { label: 'Homesickness', issues: [
+    { id: 'C4-I01', t: 'I miss home and my family a lot since coming to the hostel.' }] }
+};
+
+var ASMT_BODY_PARTS = [
+  { id: 'head', label: 'Head' }, { id: 'chest', label: 'Chest' }, { id: 'stomach', label: 'Stomach' },
+  { id: 'hands', label: 'Hands' }, { id: 'legs', label: 'Legs' }, { id: 'whole', label: 'Whole body' },
+  { id: 'mind', label: 'Nowhere in particular, just in my mind' }
+];
+var ASMT_INTENSITY = [
+  { em: '😌', label: 'Very light' }, { em: '🙂', label: 'Light' }, { em: '😐', label: 'Medium' },
+  { em: '😟', label: 'Strong' }, { em: '😱', label: 'Very strong' }
+];
+var ASMT_EMOTIONS = [
+  { id: 'happy', em: '😊', label: 'Happy' }, { id: 'sad', em: '😢', label: 'Sad' }, { id: 'worried', em: '😨', label: 'Worried' },
+  { id: 'angry', em: '😠', label: 'Angry' }, { id: 'numb', em: '😶', label: 'Numb' }, { id: 'confused', em: '😕', label: 'Confused' },
+  { id: 'guilty', em: '😔', label: 'Guilty' }, { id: 'scared', em: '😱', label: 'Scared' }, { id: 'ok', em: '🙂', label: 'Okay-ish' }
+];
+var ASMT_SLEEP = ['Really well, feeling rested', 'Okay most nights', 'Up and down, some good some bad', 'Struggling to sleep most nights', 'Hardly sleeping at all'];
+var ASMT_APPETITE = ['Eating normally, feels fine', 'Eating a bit less or more than usual', 'Noticeably different from normal', 'Eating very little or way too much', "Barely eating, or can't stop eating"];
+var ASMT_FREQ4 = ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'];
+
+var ASMT_PHQ = [
+  { t: 'Little interest or pleasure in doing things', g: "Not enjoying things you usually like, or not feeling like doing anything." },
+  { t: 'Feeling down, depressed, or hopeless', g: "Feeling very low or sad, or feeling like things won't get better." }
+];
+var ASMT_GAD = [
+  { t: 'Feeling nervous, anxious, or on edge', g: 'Feeling tense, jumpy or scared, like something bad might happen.' },
+  { t: 'Not being able to stop or control worrying', g: "Worries keep coming back and you can't switch them off." }
+];
+
+var ASMT_SUBS = [
+  { id: 'tobacco', em: '🚬', name: 'Tobacco', local: 'Cigarette, beedi, gutka, paan, Cool Lip, vape', q: 'used tobacco (like cigarettes, beedi, gutka, Cool Lip or vapes)', noFail: true },
+  { id: 'alcohol', em: '🍺', name: 'Alcohol', local: 'Beer, arrack or any other alcohol', q: 'had alcohol', acute: true },
+  { id: 'cannabis', em: '🌿', name: 'Ganja', local: 'Ganja, bhang, weed', q: 'used ganja or bhang' },
+  { id: 'inhalants', em: '🧴', name: 'Sniffing things', local: 'Whitener, glue, petrol', q: 'sniffed things like whitener, glue or petrol', acute: true },
+  { id: 'sedatives', em: '💊', name: 'Sleeping tablets', local: 'Taken without a doctor telling you to', q: 'taken sleeping tablets without a doctor telling you to', acute: true },
+  { id: 'opioids', em: '🧪', name: 'Cough syrup or painkillers', local: 'Taken to feel different, not for illness', q: 'taken cough syrup or painkillers to feel different', acute: true },
+  { id: 'other', em: '❔', name: 'Other pills or powders', local: 'Anything else taken to feel high or different', q: 'taken other pills or powders to feel different', acute: true }
+];
+var ASMT_SUBS_BY = {};
+ASMT_SUBS.forEach(function (s) { ASMT_SUBS_BY[s.id] = s; });
+var ASMT_SU_FREQ = ['Never', 'Once or twice', 'Every month', 'Every week', 'Every day or almost every day'];
+var ASMT_SU_EVER3 = ['No, never', 'Yes, in the past 3 months', 'Yes, but not in the past 3 months'];
+var ASMT_SU_ITEMS = {
+  freq: function (s) { return 'In the past 3 months, how often have you ' + s.q + '?'; },
+  crave: function () { return 'In the past 3 months, how often have you had a strong wish or urge to use it?'; },
+  prob: function () { return 'In the past 3 months, how often has using it led to problems, like with your health, friends, family, studies or money?'; },
+  fail: function () { return "In the past 3 months, how often have you not done things you were supposed to do because of using it?"; },
+  concern: function () { return 'Has a friend, someone in your family or anyone else ever been worried about you using it?'; },
+  cut: function () { return "Have you ever tried to cut down or stop using it, but couldn't?"; }
+};
+var ASMT_SOURCES = [
+  { id: 'friend', label: 'A friend' }, { id: 'senior', label: 'A senior student' },
+  { id: 'adult_school', label: 'An adult at school' }, { id: 'home', label: 'Someone at home' },
+  { id: 'shop', label: 'A shop' }, { id: 'rns', label: "I'd rather not say" }
+];
+
+var ASMT_CS = {
+  q1: { key: 'CS1', t: 'In the past month, have you wished you were dead, or wished you could go to sleep and never wake up?', v: 'cssrs_q1_wish_dead' },
+  q2: { key: 'CS2', t: 'In the past month, have you had any thoughts about killing yourself?', v: 'cssrs_q2_ideation' },
+  q3: { key: 'CS3', t: 'Have you thought about how you might do this?', v: 'cssrs_q3_method' },
+  q4: { key: 'CS4', t: 'When you had these thoughts, did you have any intention of acting on them?', v: 'cssrs_q4_intent' },
+  q5: { key: 'CS5', t: 'Have you started to work out, or worked out, the details of how to kill yourself? Do you intend to carry out this plan?', v: 'cssrs_q5_plan' },
+  q6: { key: 'CS6', t: 'Have you ever done anything, started to do anything, or got ready to do anything to end your life?', v: 'cssrs_q6_behaviour' },
+  q6b: { key: 'CS6b', t: 'Was this in the past 3 months?', v: 'cssrs_q6b_recent' }
+};
+
+var ASMT_ORDER = ['A00', 'A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'SU0', 'SU1', 'SU2', 'SU3', 'SU4', 'SU5',
+  'SU6', 'A07', 'A08', 'A08b', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6', 'CS6b', 'S1', 'S2', 'S3', 'S4', 'A13'];
+
+var ASMT_NAV = [
+  { label: 'Before we start', items: [['A00', 'Warm intro', 'purple']] },
+  { label: 'How you have been', items: [['A01', 'Body sensation', 'amber'], ['A02', 'Emotions', 'amber'], ['A03', 'Sleep', 'amber'], ['A04', 'Appetite', 'amber'], ['A05', 'Mood (PHQ-2)', 'amber'], ['A06', 'Worry (GAD-2)', 'amber']] },
+  { label: 'Substances (ASSIST-Y)', items: [['SU0', 'Lead-in', 'blue'], ['SU1', 'Ever used', 'blue'], ['SU2', 'Per substance', 'cond'], ['SU3', 'Injecting', 'cond'], ['SU4', 'Acute check', 'cond'], ['SU5', 'Where from', 'cond'], ['SU6', 'What I heard', 'blue']] },
+  { label: 'Your topics', items: [['A07', 'How often (per issue)', 'amber'], ['A08', 'How much (per issue)', 'amber'], ['A08b', 'Right now 0 to 10', 'amber']] },
+  { label: 'Suicide screen (C-SSRS)', items: [['CS1', 'Wish to be dead', 'red'], ['CS2', 'Thoughts', 'red'], ['CS3', 'Method', 'cond'], ['CS4', 'Intent', 'cond'], ['CS5', 'Plan', 'cond'], ['CS6', 'Behaviour', 'red'], ['CS6b', 'Past 3 months', 'cond']] },
+  { label: 'Safety right now', items: [['S1', 'Safe right now', 'red'], ['S2', 'Anyone hurting you', 'red'], ['S3', 'Where is this person', 'cond'], ['S4', 'Can they reach you', 'cond']] },
+  { label: 'Result', items: [['A13', 'Composite (dev)', 'green']] }
+];
+
+// ===================== STATE =====================
+var asmtS = null;
+function asmt_reset() {
+  var keep = asmtS ? { age: asmtS.age, basketKey: asmtS.basketKey, consent: asmtS.consent, lang: asmtS.lang }
+    : { age: 13, basketKey: 'study_sub', consent: { parent: true, assent: true, bio: true }, lang: 'en' };
+  asmtS = {
+    age: keep.age, basketKey: keep.basketKey, consent: keep.consent, lang: keep.lang,
+    bodyParts: [], bodyInt: null, emotion: null, sleep: null, appetite: null,
+    phq: [null, null], gad: [null, null], gloss: {},
+    su: { ever: {}, none: false, rns: false, d: {}, inject: null, acute: null, source: [] },
+    cf: {}, distress: null,
+    cs: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q6b: null },
+    sf: { safe: null, hurt: null, where: null, reach: null },
+    flags: [], cur: { key: 'A00', arg: null }, rerender: false, red: null
+  };
+}
+
+function asmt_basket() { return ASMT_BASKETS[asmtS.basketKey].issues; }
+function asmt_suVersion() { return asmtS.age <= 14 ? '10-14' : (asmtS.age <= 17 ? '15-17' : 'adult'); }
+function asmt_suD(id) {
+  if (!asmtS.su.d[id]) asmtS.su.d[id] = { freq: null, crave: null, prob: null, fail: null, concern: null, cut: null };
+  return asmtS.su.d[id];
+}
+function asmt_usedSubs() { return ASMT_SUBS.filter(function (s) { return asmtS.su.ever[s.id] === true; }).map(function (s) { return s.id; }); }
+function asmt_acuteEligible() {
+  return asmt_usedSubs().some(function (id) {
+    var d = asmt_suD(id); return ASMT_SUBS_BY[id].acute && typeof d.freq === 'number' && d.freq > 0;
+  });
+}
+
+function asmt_flag(code, level, note) {
+  var f = asmtS.flags.filter(function (x) { return x.code === code; })[0];
+  if (f) { f.level = level; f.note = note; return; }
+  asmtS.flags.push({ code: code, level: level, note: note });
+}
+function asmt_unflag(code) { asmtS.flags = asmtS.flags.filter(function (x) { return x.code !== code; }); }
+
+// ===================== PATH (dynamic flow) =====================
+function asmt_sid(s) { return s.key + (s.arg !== null && s.arg !== undefined ? ':' + s.arg : ''); }
+function asmt_path() {
+  var p = [];
+  function add(k, a) { p.push({ key: k, arg: (a === undefined ? null : a) }); }
+  ['A00', 'A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'SU0', 'SU1'].forEach(function (k) { add(k); });
+  var used = asmt_usedSubs();
+  used.forEach(function (id) { add('SU2', id); });
+  if (used.length) {
+    add('SU3');
+    if (asmt_acuteEligible()) add('SU4');
+    add('SU5');
+    add('SU6');
+  } else if (asmtS.su.none || asmtS.su.rns) {
+    add('SU6');
+  }
+  asmt_basket().forEach(function (it, i) { add('A07', i); add('A08', i); });
+  add('A08b');
+  add('CS1'); add('CS2');
+  if (asmtS.cs.q2 !== false) { add('CS3'); add('CS4'); add('CS5'); }
+  add('CS6');
+  if (asmtS.cs.q6 === true || asmtS.cs.q6 === 'rns') add('CS6b');
+  add('S1'); add('S2');
+  if (asmtS.sf.hurt === true) { add('S3'); add('S4'); }
+  add('A13');
+  return p;
+}
+
+// ===================== NAVIGATION =====================
+function asmt_idx(p) {
+  var id = asmt_sid(asmtS.cur);
+  for (var i = 0; i < p.length; i++) if (asmt_sid(p[i]) === id) return i;
+  return -1;
+}
+function asmt_next() {
+  if (asmtS.red) return; // Red Emergency is a single path
+  var p = asmt_path(), i = asmt_idx(p);
+  if (i < 0) { // jumped to a step that is not on the live path: continue from next key in order
+    var o = ASMT_ORDER.indexOf(asmtS.cur.key);
+    for (var j = 0; j < p.length; j++) if (ASMT_ORDER.indexOf(p[j].key) > o) { asmt_go(p[j]); return; }
+    return;
+  }
+  if (i < p.length - 1) asmt_go(p[i + 1]);
+}
+function asmt_prev() {
+  if (asmtS.red) { return; } // Red Emergency has no back route
+  var p = asmt_path(), i = asmt_idx(p);
+  if (i > 0) asmt_go(p[i - 1]);
+}
+function asmt_go(step) { asmtS.cur = step; asmtS.rerender = false; asmt_render(); }
+function asmt_rr() { asmtS.rerender = true; asmt_render(); }
+function asmt_jump(key) {
+  asmtS.red = null;
+  var arg = null;
+  if (key === 'SU2') arg = asmt_usedSubs()[0] || 'alcohol';
+  if (key === 'A07' || key === 'A08') arg = 0;
+  asmt_go({ key: key, arg: arg });
+}
+function asmt_restart() { asmt_reset(); asmt_go({ key: 'A00', arg: null }); }
+
+// ===================== SHELL RENDERING =====================
+function asmt_render() {
+  asmtS.red = null;
+  var k = asmtS.cur.key;
+  var fn = window['asmt_r_' + k];
+  if (fn) fn(asmtS.cur.arg);
+  var p = asmt_path(), i = asmt_idx(p);
+  var pct = i < 0 ? 0 : Math.round((i / (p.length - 1)) * 100);
+  document.getElementById('asmt-pfill').style.width = pct + '%';
+  asmt_navActive(k);
+}
+function asmt_step() {
+  var p = asmt_path().filter(function (s) { return s.key !== 'A00' && s.key !== 'A13'; });
+  var id = asmt_sid(asmtS.cur), n = 0;
+  for (var i = 0; i < p.length; i++) if (asmt_sid(p[i]) === id) n = i + 1;
+  return n ? ('step ' + n + ' of ' + p.length) : '';
+}
+function asmt_meta(id, name) {
+  document.getElementById('asmt-sid').textContent = id;
+  var st = asmt_step();
+  document.getElementById('asmt-spos').textContent = name + (st ? ', ' + st : '');
+}
+function asmt_body(html, bg, tight) {
+  var pb = document.getElementById('asmt-pb');
+  pb.className = 'phone-body' + (asmtS.rerender ? ' no-anim' : '');
+  var banner = asmtS.lang === 'ta' ? '<div class="asmt-banner">Tamil version will load here once the validated translation is ready</div>' : '';
+  pb.innerHTML = banner + '<div class="' + (bg || 'bg-soft') + '"><div class="' + (tight ? 'sc-sm' : 'sc') + '">' + html + '</div></div>';
+}
+function asmt_footer(o) {
+  o = o || {};
+  var label = o.label || 'Continue';
+  var back = o.noBack ? '' : '<div class="btn btn-back" role="button" tabindex="0" onclick="asmt_prev()">Back</div>';
+  var nx = o.canNext === false ? '<div class="btn btn-d" aria-disabled="true">' + label + '</div>'
+    : '<div class="btn btn-p" role="button" tabindex="0" onclick="asmt_next()">' + label + '</div>';
+  var h = '<div class="btn-row">' + back + nx + '</div>';
+  if (o.pause) h += '<div class="asmt-mini-row"><span class="asmt-mini" role="button" tabindex="0" onclick="asmt_pause(true)">I need a break</span></div>';
+  document.getElementById('asmt-pf').innerHTML = h;
+}
+function asmt_branch(rows) {
+  document.getElementById('asmt-bc').innerHTML = rows.map(function (r) {
+    return '<div class="branch-row"><span class="branch-cond">' + r[0] + '</span><span class="branch-arr">→</span><span class="branch-dest">' + r[1] + '</span></div>';
+  }).join('');
+}
+function asmt_dev(o) {
+  var h = '';
+  h += '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#378ADD"></div><div class="dev-head-title">Inputs</div></div><div class="dev-body">';
+  if (!o.inputs || !o.inputs.length) h += '<div class="dev-note">No DB reads required</div>';
+  else o.inputs.forEach(function (r) { h += '<div class="dev-row"><div class="dev-k">' + r[0] + '</div><div class="dev-v">' + r[1] + '</div></div>'; });
+  h += '</div></div>';
+  h += '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#1D9E75"></div><div class="dev-head-title">Outputs, writes to DB</div></div><div class="dev-body">';
+  if (!o.outputs || !o.outputs.length) h += '<div class="dev-note">No DB writes on this screen</div>';
+  else o.outputs.forEach(function (r) { h += '<div class="dev-row"><div class="dev-k"><code>' + r[0] + '</code></div><div class="dev-v">' + r[1] + '</div></div>'; });
+  h += '</div></div>';
+  h += '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#E24B4A"></div><div class="dev-head-title">Branch triggers</div></div><div class="dev-body">';
+  if (!o.triggers || !o.triggers.length) h += '<div class="dev-note">Linear, no conditional branches</div>';
+  else o.triggers.forEach(function (r) { h += '<div class="dev-tr"><div class="dev-tc">' + r[0] + '</div><div class="dev-ta">' + r[1] + '</div></div>'; });
+  if (o.note) h += '<div class="dev-note">' + o.note + '</div>';
+  h += '</div></div>';
+  if (o.extra) h += o.extra;
+  h += asmt_flagsCard();
+  document.getElementById('asmt-devpanel').innerHTML = h;
+}
+function asmt_flagsCard() {
+  var lv = { info: ['#555', 'Info'], flag: ['#EF9F27', 'Clinician review'], urgent: ['#D85A30', 'Same-day alert'], realtime: ['#E24B4A', 'Real-time alert'] };
+  var h = '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#EF9F27"></div><div class="dev-head-title">Clinician flags raised so far</div></div><div class="dev-body">';
+  if (!asmtS.flags.length) h += '<div class="dev-note" style="border:none;margin:0;padding:0">None yet</div>';
+  asmtS.flags.forEach(function (f) {
+    var c = lv[f.level] || lv.info;
+    h += '<div class="dev-row"><div class="dev-k" style="color:' + c[0] + '">' + f.code + '</div><div class="dev-v"><strong style="color:' + c[0] + '">' + c[1] + '.</strong> ' + (f.note || '') + '</div></div>';
+  });
+  h += '<div class="dev-note">Written to CLINICIAN_ALERT (new table). Response windows for each level are a clinical decision; set them in config.</div></div></div>';
+  return h;
+}
+
+// ===================== UI HELPERS =====================
+function asmt_opt(sel, label, act) {
+  return '<div class="option-card' + (sel ? ' sel' : '') + '" role="button" tabindex="0" onclick="' + act + '"><div class="option-radio' + (sel ? ' on' : '') + '"></div><span>' + label + '</span></div>';
+}
+function asmt_rns(sel, act) {
+  return '<div class="asmt-rns' + (sel ? ' sel' : '') + '" role="button" tabindex="0" onclick="' + act + '">I\'d rather not say</div>';
+}
+function asmt_yn(q, cur, fn) {
+  return '<div class="yn-grid">'
+    + '<div class="yn-card' + (cur === false ? ' no' : '') + '" role="button" tabindex="0" onclick="' + fn + '(\'' + q + '\',false)"><div class="yn-icon">😌</div><div class="yn-label">No</div></div>'
+    + '<div class="yn-card' + (cur === true ? ' yes-sel' : '') + '" role="button" tabindex="0" onclick="' + fn + '(\'' + q + '\',true)"><div class="yn-icon">😔</div><div class="yn-label">Yes</div></div>'
+    + '</div>' + asmt_rns(cur === 'rns', fn + '(\'' + q + '\',\'rns\')');
+}
+function asmt_ans(v) { return v !== null && v !== undefined; }
+
+// ===================== PAUSE, LANGUAGE, READ-ALOUD =====================
+function asmt_pause(on) {
+  var el = document.getElementById('asmt-pause');
+  if (on) {
+    el.innerHTML = '<div style="font-size:46px;animation:float 3s ease-in-out infinite">🌿</div>'
+      + '<div class="warm-q">Take all the time you need</div>'
+      + '<div class="warm-sub" style="line-height:1.7">Breathe in slowly while you count to 4, and out while you count to 6. Your answers are saved, so nothing is lost.</div>'
+      + '<div class="btn btn-p" style="width:100%;flex:none" role="button" tabindex="0" onclick="asmt_pause(false)">I\'m ready to carry on</div>'
+      + '<div class="asmt-mini" role="button" tabindex="0" onclick="asmt_pauseHelp()">I want to talk to someone</div>'
+      + '<div id="asmt-pause-help" style="width:100%"></div>';
+    el.classList.add('on');
+  } else { el.classList.remove('on'); el.innerHTML = ''; }
+}
+function asmt_pauseHelp() {
+  document.getElementById('asmt-pause-help').innerHTML = asmt_helplines(['tele', 'child']);
+  asmt_flag('pause_help_requested', 'urgent', 'Child asked to talk to someone during a pause. Offer the helpline consent flow from Prototype 6.');
+}
+function asmt_lang(l) {
+  asmtS.lang = l;
+  document.getElementById('asmt-lang-en').classList.toggle('on', l === 'en');
+  document.getElementById('asmt-lang-ta').classList.toggle('on', l === 'ta');
+  asmt_rr();
+}
+function asmt_speak() {
+  if (!('speechSynthesis' in window)) return;
+  var q = document.querySelector('#asmt-pb .warm-q');
+  if (!q) return;
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(q.textContent);
+  u.lang = asmtS.lang === 'ta' ? 'ta-IN' : 'en-IN';
+  u.rate = 0.92;
+  window.speechSynthesis.speak(u);
+}
+function asmt_helplines(which) {
+  var all = {
+    tele: ['💜', 'Tele-MANAS, talk to a counsellor', '14416'],
+    child: ['🧒', 'Childline, help for children', '1098'],
+    emerg: ['🚨', 'Emergency', '112'],
+    amb: ['🚑', 'Ambulance', '108']
+  };
+  return '<div style="display:flex;flex-direction:column;gap:8px;width:100%">' + which.map(function (k) {
+    var h = all[k];
+    return '<a class="asmt-help" href="tel:' + h[2] + '"><span style="font-size:20px">' + h[0] + '</span><span>' + h[1] + '</span><span class="asmt-help-num">' + h[2] + '</span></a>';
+  }).join('') + '</div>';
+}
+
+// ===================== SCREENS =====================
+
+// A00 Warm intro
+function asmt_r_A00() {
+  asmt_meta('A00', 'Before we begin');
+  asmt_body(
+    '<div style="font-size:52px;text-align:center;animation:float 3s ease-in-out infinite">💜</div>'
+    + '<div class="warm-q" style="font-size:18px">I\'d love to understand how you\'re really doing</div>'
+    + '<div class="warm-sub" style="line-height:1.7">I\'m going to ask you some questions about how you\'ve been feeling. They come from tools that wellbeing experts use around the world, and I\'ve made them gentle and easy to answer.</div>'
+    + '<div class="note-card nc-amber"><span class="nc-icon">💡</span><span>There are no right or wrong answers. Just share what feels true for you.</span></div>'
+    + '<div class="note-card nc-green"><span class="nc-icon">🔒</span><span>What you share stays private. The only time I would tell someone is if you might be in danger, so they can help keep you safe.</span></div>'
+    + '<div class="note-card nc-purple"><span class="nc-icon">🌿</span><span>You can skip any question you don\'t want to answer, or take a break whenever you need one.</span></div>'
+  );
+  asmt_footer({ noBack: true, label: "I'm ready" });
+  asmt_branch([['always', 'A01 Body sensation']]);
+  asmt_dev({
+    inputs: [['CHILD.dob', 'Age drives ASSIST-Y version later'], ['CLUSTER_FLAG', 'Issue basket for A01, A07, A08']],
+    outputs: [['AUDIT_LOG', "event_type='assessment_start' · timestamp"]],
+    note: 'Confidentiality line states the limit of privacy in child language, as the ethics approval will expect once Red routing exists. Skip and pause are explained up front so children use them instead of giving forced answers. Tamil toggle and read-aloud sit in the phone bar.'
+  });
+}
+
+// A01 Body sensation
+function asmt_bodySVG(parts) {
+  var c = function (id, col) { return (parts.indexOf(id) > -1 || parts.indexOf('whole') > -1) ? (parts.indexOf('whole') > -1 ? '#C084E8' : col) : '#E0E0E8'; };
+  return '<svg width="100" height="160" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    + '<ellipse cx="50" cy="22" rx="18" ry="20" fill="' + c('head', '#B09EE8') + '"/>'
+    + '<ellipse cx="20" cy="68" rx="10" ry="22" fill="' + c('hands', '#7DDBA3') + '"/>'
+    + '<ellipse cx="80" cy="68" rx="10" ry="22" fill="' + c('hands', '#7DDBA3') + '"/>'
+    + '<rect x="30" y="44" width="40" height="30" rx="6" fill="' + c('chest', '#F48FAD') + '"/>'
+    + '<rect x="32" y="72" width="36" height="24" rx="6" fill="' + c('stomach', '#F4C06A') + '"/>'
+    + '<rect x="30" y="96" width="16" height="52" rx="8" fill="' + c('legs', '#80BFEA') + '"/>'
+    + '<rect x="54" y="96" width="16" height="52" rx="8" fill="' + c('legs', '#80BFEA') + '"/>'
+    + '</svg>';
+}
+function asmt_bodyToggle(id) {
+  var p = asmtS.bodyParts, i = p.indexOf(id);
+  if (id === 'mind') { asmtS.bodyParts = (i > -1) ? [] : ['mind']; }
+  else {
+    var m = p.indexOf('mind'); if (m > -1) p.splice(m, 1);
+    i = p.indexOf(id);
+    if (i > -1) p.splice(i, 1); else p.push(id);
+  }
+  asmt_rr();
+}
+function asmt_bodyInt(n) { asmtS.bodyInt = n; asmt_rr(); }
+function asmt_r_A01() {
+  asmt_meta('A01', 'Body sensation');
+  var b = asmt_basket();
+  var more = b.length > 1 ? ' <span style="color:#999">and ' + (b.length - 1) + ' more thing you shared</span>' : '';
+  var parts = ASMT_BODY_PARTS.map(function (p) {
+    var on = asmtS.bodyParts.indexOf(p.id) > -1;
+    return '<div class="body-part-item' + (on ? ' sel' : '') + '" role="button" tabindex="0" onclick="asmt_bodyToggle(\'' + p.id + '\')"><div class="body-part-cb' + (on ? ' on' : '') + '"></div><span>' + p.label + '</span></div>';
+  }).join('');
+  var ints = ASMT_INTENSITY.map(function (it, n) {
+    return '<div class="intensity-card' + (asmtS.bodyInt === n ? ' sel' : '') + '" role="button" tabindex="0" onclick="asmt_bodyInt(' + n + ')"><div class="intensity-emoji">' + it.em + '</div><div class="intensity-label">' + it.label + '</div></div>';
+  }).join('');
+  asmt_body(
+    '<div class="thinking-pill"><span class="thinking-icon">💬</span><span>Thinking about: <strong>"' + b[0].t + '"</strong>' + more + '</span></div>'
+    + '<div class="warm-q">When you think about this, do you feel it anywhere in your body?</div>'
+    + '<div class="body-screen-layout"><div class="body-figure-wrap">' + asmt_bodySVG(asmtS.bodyParts) + '<div class="body-figure-hint">Tap the parts where you feel it</div></div><div class="body-parts-list">' + parts + '</div></div>'
+    + '<div class="intensity-wrap"><div class="intensity-title">How strong does it feel right now?</div><div class="intensity-grid">' + ints + '</div></div>',
+    'bg-light', true);
+  asmt_footer({ canNext: asmtS.bodyParts.length > 0 && asmtS.bodyInt !== null });
+  asmt_branch([['always', 'A02 Emotions'], ['no emergency trigger', 'Feeds body_score only']]);
+  asmt_dev({
+    inputs: [['CLUSTER_FLAG', 'First issue in basket shown in the pill, count of others shown after it']],
+    outputs: [['ASSESSMENT_SCORE.body_score', 'Integer 0 to 4 (was 1 to 5). Current: ' + (asmtS.bodyInt === null ? 'none' : asmtS.bodyInt)], ['ASSESSMENT_SCORE.body_parts', 'Array: ' + JSON.stringify(asmtS.bodyParts)]],
+    note: "Zero-based so a child with no distress can score 0. 'Just in my mind' is exclusive: choosing it clears body parts and choosing a body part clears it. Pill text is read from the basket, not hardcoded."
+  });
+}
+
+// A02 Emotions
+function asmt_emo(id) { asmtS.emotion = id; asmt_rr(); }
+function asmt_r_A02() {
+  asmt_meta('A02', 'Emotions');
+  var c = asmtS.consent, cam = c.parent && c.assent && c.bio;
+  var grid = ASMT_EMOTIONS.map(function (e) {
+    return '<div class="em-card' + (asmtS.emotion === e.id ? ' sel' : '') + '" role="button" tabindex="0" onclick="asmt_emo(\'' + e.id + '\')"><div class="em-card-icon">' + e.em + '</div><div class="em-card-label">' + e.label + '</div></div>';
+  }).join('');
+  asmt_body(
+    '<div style="font-size:48px;text-align:center;animation:float 3s ease-in-out infinite">💭</div>'
+    + '<div class="warm-q">And how are you feeling inside right now?</div>'
+    + '<div class="warm-sub">Pick the one that feels closest, just for this moment</div>'
+    + '<div class="emotion-grid-3">' + grid + '</div>'
+    + (cam ? '<div class="note-card nc-purple"><span class="nc-icon">📷</span><span>You and your parent said yes to this earlier, so I\'ll also gently notice your face expression here. You can change your mind any time.</span></div>' : '')
+  );
+  asmt_footer({ canNext: !!asmtS.emotion });
+  asmt_branch([['always', 'A03 Sleep'], ['parent_consent AND child_assent AND biometric_opt_in', 'Face emotion captured here']]);
+  asmt_dev({
+    inputs: [['CHILD.parent_consent', String(c.parent)], ['CHILD.child_assent', String(c.assent)], ['CHILD.biometric_opt_in', String(c.bio)]],
+    outputs: [['ASSESSMENT_SCORE.dominant_emotion', 'Selected id, not scored. Current: ' + (asmtS.emotion || 'none')], ['EMOTION_CAPTURE', cam ? "face_emotion_score 0 to 1 · capture_point='mood_screen'" : 'Not written: consent flags not all true']],
+    note: 'Camera capture only when parental consent, child assent and the biometric opt-in are all true. The on-screen note names both the child and the parent so the record matches the consent model. Use the sidebar toggle to preview both states.'
+  });
+}
+
+// A03 Sleep, A04 Appetite
+function asmt_sleep(v) { asmtS.sleep = v; asmt_rr(); }
+function asmt_app(v) { asmtS.appetite = v; asmt_rr(); }
+function asmt_r_A03() {
+  asmt_meta('A03', 'Sleep');
+  asmt_body(
+    '<div style="font-size:44px;text-align:center;animation:float 3s ease-in-out infinite">🌙</div>'
+    + '<div class="warm-q">How has your sleep been over the last 2 weeks?</div>'
+    + '<div class="warm-sub">Think about nights in the hostel and at home</div>'
+    + '<div class="option-list">' + ASMT_SLEEP.map(function (l, i) { return asmt_opt(asmtS.sleep === i, l, 'asmt_sleep(' + i + ')'); }).join('') + '</div>'
+  );
+  asmt_footer({ canNext: asmtS.sleep !== null });
+  asmt_branch([['always', 'A04 Appetite']]);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.sleep_score', 'Integer 0 to 4. Current: ' + (asmtS.sleep === null ? 'none' : asmtS.sleep)]],
+    note: 'FIXED: no preselected answer. The old file defaulted to 5 (Hardly sleeping) with Continue enabled, adding up to 4 points for a child who tapped through. Recall period aligned to 2 weeks to match PHQ-2 and GAD-2.'
+  });
+}
+function asmt_r_A04() {
+  asmt_meta('A04', 'Appetite');
+  asmt_body(
+    '<div style="font-size:44px;text-align:center;animation:float 3s ease-in-out infinite">🍽️</div>'
+    + '<div class="warm-q">How has your appetite been over the last 2 weeks?</div>'
+    + '<div class="warm-sub">Sometimes feelings show up through eating, and that\'s very normal</div>'
+    + '<div class="option-list">' + ASMT_APPETITE.map(function (l, i) { return asmt_opt(asmtS.appetite === i, l, 'asmt_app(' + i + ')'); }).join('') + '</div>'
+  );
+  asmt_footer({ canNext: asmtS.appetite !== null });
+  asmt_branch([['always', 'A05 Mood']]);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.appetite_score', 'Integer 0 to 4. Current: ' + (asmtS.appetite === null ? 'none' : asmtS.appetite)]],
+    note: 'FIXED: no preselected answer. Same fix as A03.'
+  });
+}
+
+// A05 PHQ-2, A06 GAD-2
+function asmt_scale(which, i, v) {
+  asmtS[which][i] = v;
+  var a = asmtS[which];
+  if (a[0] === 'rns' || a[1] === 'rns') asmt_flag(which + '2_nonresponse', 'info', 'One or both items answered "rather not say". Score is incomplete.');
+  else asmt_unflag(which + '2_nonresponse');
+  asmt_rr();
+}
+function asmt_gloss(k) { asmtS.gloss[k] = !asmtS.gloss[k]; asmt_rr(); }
+function asmt_scaleBlocks(which, items, domain) {
+  return items.map(function (it, i) {
+    var cur = asmtS[which][i], gk = which + i;
+    return '<div class="q-block">'
+      + '<div class="q-domain">' + domain + ', ' + (i + 1) + ' of 2</div>'
+      + '<div class="warm-q" style="font-size:13px;text-align:left;margin-bottom:4px">' + it.t + '</div>'
+      + '<span class="asmt-gloss-btn" role="button" tabindex="0" onclick="asmt_gloss(\'' + gk + '\')">' + (asmtS.gloss[gk] ? 'Hide' : 'What does this mean?') + '</span>'
+      + (asmtS.gloss[gk] ? '<div class="asmt-gloss">' + it.g + '</div>' : '')
+      + '<div class="option-list">' + ASMT_FREQ4.map(function (l, v) { return asmt_opt(cur === v, l, 'asmt_scale(\'' + which + '\',' + i + ',' + v + ')'); }).join('')
+      + asmt_rns(cur === 'rns', 'asmt_scale(\'' + which + '\',' + i + ',\'rns\')') + '</div></div>';
+  }).join('');
+}
+function asmt_scaleSum(a) { return (typeof a[0] === 'number' ? a[0] : 0) + (typeof a[1] === 'number' ? a[1] : 0); }
+function asmt_r_A05() {
+  asmt_meta('A05', 'Mood');
+  asmt_body(
+    '<div class="warm-q">Over the last 2 weeks, how often have you been bothered by these?</div>'
+    + '<div class="note-card nc-amber"><span class="nc-icon">💡</span><span>These questions are used by wellbeing experts around the world. Tap "What does this mean?" if a word is hard.</span></div>'
+    + asmt_scaleBlocks('phq', ASMT_PHQ, 'Mood'), 'bg-soft', true);
+  asmt_footer({ canNext: asmt_ans(asmtS.phq[0]) && asmt_ans(asmtS.phq[1]), pause: true });
+  asmt_branch([['always', 'A06 Worry'], ['phq2 >= ' + asmtCfg.phq2_cut, 'Clinician flag and band override at A13']]);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.phq2_q1 / q2', '0 to 3 or null (rather not say)'], ['ASSESSMENT_SCORE.phq2_score', '0 to 6. Current: ' + asmt_scaleSum(asmtS.phq)]],
+    triggers: [['phq2_score >= ' + asmtCfg.phq2_cut, 'phq2_positive flag · minimum band Amber']],
+    note: 'Validated PHQ-2 stems unchanged. The gloss is a separate tap and does not alter the item. Score numbers removed from the child view. Tamil adolescent validation pending.'
+  });
+}
+function asmt_r_A06() {
+  asmt_meta('A06', 'Worry');
+  asmt_body(
+    '<div class="warm-q">Still thinking about the last 2 weeks, how often have you been bothered by these?</div>'
+    + asmt_scaleBlocks('gad', ASMT_GAD, 'Worry'), 'bg-soft', true);
+  asmt_footer({ canNext: asmt_ans(asmtS.gad[0]) && asmt_ans(asmtS.gad[1]), pause: true });
+  asmt_branch([['always', 'SU0 Substances lead-in'], ['gad2 >= ' + asmtCfg.gad2_cut, 'Clinician flag and band override at A13']]);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.gad2_q1 / q2', '0 to 3 or null'], ['ASSESSMENT_SCORE.gad2_score', '0 to 6. Current: ' + asmt_scaleSum(asmtS.gad) + ' (schema field gad7_score to be renamed)']],
+    triggers: [['gad2_score >= ' + asmtCfg.gad2_cut, 'gad2_positive flag · minimum band Amber']],
+    note: 'Published sensitivity and specificity for GAD-2 are from adult samples. Adolescent and Tamil figures to come from the ARAM pilot.'
+  });
+}
+
+// SU0 Lead-in
+function asmt_r_SU0() {
+  asmt_meta('SU0', 'Substances lead-in');
+  asmt_body(
+    '<div style="font-size:46px;text-align:center;animation:float 3s ease-in-out infinite">🌱</div>'
+    + '<div class="warm-q">Now a few questions about things some young people try</div>'
+    + '<div class="warm-sub" style="line-height:1.7">Like tobacco, alcohol, or other things people take to feel different. Many students your age have never tried any of these. If that\'s you, that\'s completely fine to say.</div>'
+    + '<div class="note-card nc-green"><span class="nc-icon">🔒</span><span>This isn\'t a test and it isn\'t a report to your school. Nothing you say here goes into your school record or gets you punished. I only want to know what\'s really going on, so I can help in the right way.</span></div>'
+    + '<div class="note-card nc-purple"><span class="nc-icon">💜</span><span>The more true your answers are, the better I can understand what you need. That\'s the only reason I\'m asking.</span></div>'
+  );
+  asmt_footer({ pause: true });
+  asmt_branch([['always', 'SU1 Ever used']]);
+  asmt_dev({
+    inputs: [['CHILD.dob', 'Age ' + asmtS.age + ' → ASSIST-Y version ' + asmt_suVersion()]],
+    note: 'IMPORTANT: the "nothing gets you punished" sentence must match a written agreement with each school. If a school will not agree, remove the sentence for that school rather than making a promise that cannot be kept. Version is picked from date of birth: 10 to 14, 15 to 17, and adult ASSIST for 18 (pending your decision).'
+  });
+}
+
+// SU1 Ever used
+function asmt_suEver(id, v) { asmtS.su.ever[id] = v; asmtS.su.none = false; asmtS.su.rns = false; asmt_unflag('substance_nonresponse'); asmt_rr(); }
+function asmt_suNone() {
+  asmtS.su.none = true; asmtS.su.rns = false; asmt_unflag('substance_nonresponse');
+  ASMT_SUBS.forEach(function (s) { asmtS.su.ever[s.id] = false; }); asmt_rr();
+}
+function asmt_suRnsAll() {
+  asmtS.su.rns = true; asmtS.su.none = false;
+  ASMT_SUBS.forEach(function (s) { asmtS.su.ever[s.id] = false; });
+  asmt_flag('substance_nonresponse', 'flag', 'Child chose not to answer the substance screen. Clinician to raise gently at follow-up.');
+  asmt_rr();
+}
+function asmt_r_SU1() {
+  asmt_meta('SU1', 'Ever used');
+  var rows = ASMT_SUBS.map(function (s) {
+    var v = asmtS.su.ever[s.id];
+    return '<div class="asmt-sub-row"><span class="asmt-sub-em">' + s.em + '</span><div class="asmt-sub-txt"><div class="asmt-sub-name">' + s.name + '</div><div class="asmt-sub-local">' + s.local + '</div></div>'
+      + '<span class="asmt-chip' + (v === false && !asmtS.su.none && !asmtS.su.rns ? ' on-no' : '') + '" role="button" tabindex="0" onclick="asmt_suEver(\'' + s.id + '\',false)">No</span>'
+      + '<span class="asmt-chip' + (v === true ? ' on-yes' : '') + '" role="button" tabindex="0" onclick="asmt_suEver(\'' + s.id + '\',true)">Yes</span></div>';
+  }).join('');
+  var all = ASMT_SUBS.every(function (s) { return asmtS.su.ever[s.id] === true || asmtS.su.ever[s.id] === false; });
+  asmt_body(
+    '<div class="warm-q">Have you ever tried any of these, even once?</div>'
+    + '<div class="asmt-none' + (asmtS.su.none ? ' sel' : '') + '" role="button" tabindex="0" onclick="asmt_suNone()">✅ I\'ve never tried any of these</div>'
+    + '<div class="warm-sub">Or answer for each one</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">' + rows + '</div>'
+    + asmt_rns(asmtS.su.rns, 'asmt_suRnsAll()'), 'bg-light', true);
+  asmt_footer({ canNext: asmtS.su.none || asmtS.su.rns || all, pause: true });
+  var used = asmt_usedSubs();
+  asmt_branch([['none / rather not say', 'Skip straight to A07'], ['any Yes', 'SU2 for each: ' + (used.length ? used.join(', ') : 'none yet')]]);
+  asmt_dev({
+    outputs: [['ASSIST_RESPONSE.lifetime_use', 'One row per substance (new table). Current: ' + JSON.stringify(asmtS.su.ever)]],
+    triggers: [['all No', 'Section ends in one tap'], ['any Yes', 'SU2 per substance, then SU3, SU4 if eligible, SU5']],
+    note: 'Cards use local names under the ASSIST categories. Cough syrup and painkillers map to ASSIST opioids. "Other pills or powders" collapses cocaine, stimulants and hallucinogens for children: DECISION NEEDED whether to show them as separate cards. Keep them separate in data either way.'
+  });
+}
+
+// SU2 Per substance (progressive, one question revealed at a time)
+function asmt_suItems(id) {
+  var s = ASMT_SUBS_BY[id], d = asmt_suD(id), items = ['freq'];
+  if (d.freq === null) return items;
+  if (typeof d.freq === 'number' && d.freq > 0) { items.push('crave'); items.push('prob'); if (!s.noFail) items.push('fail'); }
+  items.push('concern'); items.push('cut');
+  return items;
+}
+function asmt_su(id, k, v) {
+  var d = asmt_suD(id); d[k] = v;
+  if (k === 'freq' && !(typeof v === 'number' && v > 0)) { d.crave = null; d.prob = null; d.fail = null; }
+  asmt_suDerive();
+  asmt_rr();
+}
+function asmt_suScore(id) {
+  var w = asmtCfg.assist, d = asmt_suD(id), t = 0;
+  ['freq', 'crave', 'prob', 'fail', 'concern', 'cut'].forEach(function (k) { if (typeof d[k] === 'number') t += w[k][d[k]]; });
+  return t;
+}
+function asmt_suRisk(id) {
+  var c = id === 'alcohol' ? asmtCfg.assist.cut_alcohol : asmtCfg.assist.cut_other, sc = asmt_suScore(id);
+  return sc >= c[1] ? 2 : (sc >= c[0] ? 1 : 0);
+}
+function asmt_suDerive() {
+  var used = asmt_usedSubs(), maxR = 0;
+  used.forEach(function (id) { maxR = Math.max(maxR, asmt_suRisk(id)); });
+  asmt_unflag('substance_moderate'); asmt_unflag('substance_high');
+  if (maxR === 1) asmt_flag('substance_moderate', 'flag', 'Moderate risk on at least one substance. Minimum band Amber, offer Shakthi substance module.');
+  if (maxR === 2) asmt_flag('substance_high', 'flag', 'High risk on at least one substance. Minimum band Orange.');
+  var inh = asmt_suD('inhalants');
+  if (asmtS.su.ever.inhalants === true && typeof inh.freq === 'number' && inh.freq > 0) asmt_flag('inhalant_use', 'flag', 'Inhalant use in the past 3 months. Acute risk of harm.');
+  else asmt_unflag('inhalant_use');
+}
+function asmt_r_SU2(id) {
+  if (!ASMT_SUBS_BY[id]) id = 'alcohol';
+  var s = ASMT_SUBS_BY[id], d = asmt_suD(id), items = asmt_suItems(id);
+  asmt_meta('SU2', 'Substance: ' + s.name);
+  var shown = [];
+  for (var i = 0; i < items.length; i++) { shown.push(items[i]); if (!asmt_ans(d[items[i]])) break; }
+  var blocks = shown.map(function (k) {
+    var opts = (k === 'concern' || k === 'cut') ? ASMT_SU_EVER3 : ASMT_SU_FREQ;
+    return '<div class="q-block"><div class="warm-q" style="font-size:13px;text-align:left;margin-bottom:8px">' + ASMT_SU_ITEMS[k](s) + '</div><div class="option-list">'
+      + opts.map(function (l, v) { return asmt_opt(d[k] === v, l, 'asmt_su(\'' + id + '\',\'' + k + '\',' + v + ')'); }).join('')
+      + asmt_rns(d[k] === 'rns', 'asmt_su(\'' + id + '\',\'' + k + '\',\'rns\')') + '</div></div>';
+  }).join('');
+  var done = items.every(function (k) { return asmt_ans(d[k]); });
+  asmt_body(
+    '<div class="thinking-pill"><span class="thinking-icon">' + s.em + '</span><span>About <strong>' + s.name.toLowerCase() + '</strong> <span style="color:#999">(' + s.local + ')</span></span></div>'
+    + blocks, 'bg-light', true);
+  asmt_footer({ canNext: done, pause: true });
+  var risk = ['low', 'moderate', 'high'][asmt_suRisk(id)];
+  asmt_branch([['freq = Never in 3 months', 'Skip to worry and cut-down items'], ['all answered', 'Next substance, or SU3']]);
+  asmt_dev({
+    inputs: [['ASSIST version', asmt_suVersion()]],
+    outputs: [['ASSIST_RESPONSE[' + id + ']', 'freq_3m, item_responses: ' + JSON.stringify(d)], ['ASSIST_RESPONSE.involvement_score', asmt_suScore(id) + ' · risk_level: ' + risk]],
+    triggers: [['moderate', 'substance_moderate flag · minimum Amber'], ['high', 'substance_high flag · minimum Orange'], ['inhalants in past 3 months', 'inhalant_use flag']],
+    note: (asmtCfg.assist_placeholder ? '<strong style="color:#EF9F27">PLACEHOLDER SCORING:</strong> adult WHO ASSIST weights and cut-offs are used so the logic can be tested. Replace with ASSIST-Y V1.0 weights for version ' + asmt_suVersion() + ' and check item wording against the published tool. ' : '')
+      + 'Questions appear one at a time as the child answers. Tobacco skips the "not done things" item, as in the ASSIST. Recall period is 3 months and is stated in every question.'
+  });
+}
+
+// SU3 Injecting
+function asmt_suInject(v) {
+  asmtS.su.inject = v;
+  if (v === 1 || v === 2) asmt_flag('injecting', 'urgent', 'Child reports injecting drug use. Same-day clinician contact.');
+  else asmt_unflag('injecting');
+  asmt_rr();
+}
+function asmt_r_SU3() {
+  asmt_meta('SU3', 'Injecting');
+  asmt_body(
+    '<div class="warm-q">Have you ever used any drug by injection, with a needle?</div>'
+    + '<div class="warm-sub">Don\'t count medicines or injections a doctor or nurse gave you</div>'
+    + '<div class="option-list">' + ASMT_SU_EVER3.map(function (l, v) { return asmt_opt(asmtS.su.inject === v, l, 'asmt_suInject(' + v + ')'); }).join('')
+    + asmt_rns(asmtS.su.inject === 'rns', 'asmt_suInject(\'rns\')') + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: asmt_ans(asmtS.su.inject), pause: true });
+  asmt_branch([['any Yes', 'injecting flag (same-day)'], ['always', asmt_acuteEligible() ? 'SU4 Acute check' : 'SU5 Where from']]);
+  asmt_dev({
+    outputs: [['ASSIST_RESPONSE.injecting', 'Current: ' + JSON.stringify(asmtS.su.inject)]],
+    note: 'Asked once, only to children who reported any use. Confirm against ASSIST-Y whether this item is retained in the 10 to 14 version.'
+  });
+}
+
+// SU4 Acute check
+function asmt_suAcute(v) {
+  asmtS.su.acute = v;
+  if (v === 'yes' || v === 'unsure') { asmt_red('medical', 'SU4 acute check · ' + v); return; }
+  asmt_rr();
+}
+function asmt_r_SU4() {
+  asmt_meta('SU4', 'Acute check');
+  asmt_body(
+    '<div style="font-size:44px;text-align:center">🩺</div>'
+    + '<div class="warm-q">Right now, are you feeling unwell because of something you took?</div>'
+    + '<div class="warm-sub">Like feeling dizzy, very sleepy, sick, or your heart racing</div>'
+    + '<div class="option-list">'
+    + asmt_opt(asmtS.su.acute === 'no', 'No, I feel okay', 'asmt_suAcute(\'no\')')
+    + asmt_opt(false, 'Yes, I feel unwell', 'asmt_suAcute(\'yes\')')
+    + asmt_opt(false, "I'm not sure", 'asmt_suAcute(\'unsure\')') + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: asmtS.su.acute === 'no' });
+  asmt_branch([['Yes or Not sure', 'IMMEDIATE Red Emergency, medical pathway'], ['No', 'SU5 Where from']]);
+  asmt_dev({
+    inputs: [['Shown when', 'Alcohol, inhalants, sleeping tablets, cough syrup or other pills used in the past 3 months']],
+    outputs: [['SESSION.red_emergency_flag', 'true on Yes or Not sure · red_mode=medical']],
+    note: 'Medical pathway, not the suicide pathway: first aid, school nurse, 108. "Not sure" is treated as Yes because a child who has taken something may not judge their state well.'
+  });
+}
+
+// SU5 Where from
+function asmt_suSource(id) {
+  var a = asmtS.su.source;
+  if (id === 'rns') { asmtS.su.source = a.indexOf('rns') > -1 ? [] : ['rns']; }
+  else {
+    var r = a.indexOf('rns'); if (r > -1) a.splice(r, 1);
+    var i = a.indexOf(id); if (i > -1) a.splice(i, 1); else a.push(id);
+  }
+  var s = asmtS.su.source;
+  if (s.indexOf('adult_school') > -1 || s.indexOf('home') > -1)
+    asmt_flag('safeguarding_adult_supply', 'urgent', 'An adult supplied a substance' + (s.indexOf('adult_school') > -1 ? ' at school: exclude school contacts from this alert.' : ' at home.'));
+  else asmt_unflag('safeguarding_adult_supply');
+  asmt_rr();
+}
+function asmt_r_SU5() {
+  asmt_meta('SU5', 'Where from');
+  var opts = ASMT_SOURCES.map(function (o) {
+    var on = asmtS.su.source.indexOf(o.id) > -1;
+    return '<div class="body-part-item' + (on ? ' sel' : '') + '" role="button" tabindex="0" onclick="asmt_suSource(\'' + o.id + '\')"><div class="body-part-cb' + (on ? ' on' : '') + '"></div><span>' + o.label + '</span></div>';
+  }).join('');
+  asmt_body(
+    '<div class="warm-q">Where did you usually get it from?</div>'
+    + '<div class="warm-sub">You can pick more than one. This helps us keep other students safe too.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">' + opts + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: asmtS.su.source.length > 0, pause: true });
+  asmt_branch([['adult at school or home', 'safeguarding_adult_supply (same-day)'], ['shop', 'Aggregate only, never linked to the child'], ['always', 'A07 Your topics']]);
+  asmt_dev({
+    outputs: [['ASSIST_RESPONSE.supply_source', JSON.stringify(asmtS.su.source)]],
+    triggers: [['adult_school', 'Safeguarding alert with exclude_school_contacts=true'], ['home', 'Safeguarding alert']],
+    note: 'Shop answers are counted at school and district level only, for the District Dashboard (under-age sales near schools). They are never shown against a child\'s record.'
+  });
+}
+
+// SU6 Brief feedback (the ASSIST brief intervention, in the buddy's voice)
+function asmt_suFeedback() {
+  var used = asmt_usedSubs(), max = 0, anyUse = false;
+  used.forEach(function (id) {
+    max = Math.max(max, asmt_suRisk(id));
+    var d = asmt_suD(id); if (typeof d.freq === 'number' && d.freq > 0) anyUse = true;
+  });
+  if (asmtS.su.rns) return 'rns';
+  if (!used.length) return 'none';
+  if (max >= 2) return 'high';
+  if (max === 1) return 'moderate';
+  return anyUse ? 'low' : 'past';
+}
+function asmt_r_SU6() {
+  asmt_meta('SU6', 'What I heard');
+  var k = asmt_suFeedback();
+  var used = asmt_usedSubs().map(function (id) { return ASMT_SUBS_BY[id].name.toLowerCase(); });
+  var body = {
+    none: ['🌟', "You said no to all of these", "That is a real strength, especially when friends are trying things and it is hard to say no. Hold on to it.", 'nc-green'],
+    rns: ['💜', 'Thank you for telling me where your line is', "You chose not to answer those, and that is completely your right. If you ever want to talk about it, I am here, and nothing changes how I see you.", 'nc-purple'],
+    past: ['💜', 'Thank you for being honest with me', "You tried something before, but not in the last 3 months. That matters, and it is worth knowing that about yourself.", 'nc-purple'],
+    low: ['💜', 'Thank you for being honest with me', "That took guts, and nothing you said changes how I see you. You told me about " + used.join(' and ') + ". Would you like to talk about what was going on for you at those times?", 'nc-purple'],
+    moderate: ['🤝', 'Thank you for trusting me with that', "From what you shared about " + used.join(' and ') + ", it sounds like it is starting to take up some space in your life. That is not a telling off, it is just what I heard. There is a short thing we could do together about it, whenever you feel ready.", 'nc-amber'],
+    high: ['🤝', 'Thank you for trusting me with that', "What you shared about " + used.join(' and ') + " tells me it is weighing on you quite a lot right now. You do not have to sort that out on your own. Someone who is good at this will check in with you, and I will stay with you either way.", 'nc-amber']
+  }[k];
+  asmt_body(
+    '<div style="font-size:46px;text-align:center;animation:float 3s ease-in-out infinite">' + body[0] + '</div>'
+    + '<div class="warm-q">' + body[1] + '</div>'
+    + '<div class="note-card ' + body[3] + '" style="font-size:12px;line-height:1.7"><span class="nc-icon">💬</span><span>' + body[2] + '</span></div>'
+    + (k === 'moderate' || k === 'high' ? '<div class="note-card nc-purple"><span class="nc-icon">⚡</span><span>Shakthi has a short module on this. You can choose it later, or leave it. It is up to you.</span></div>' : '')
+  );
+  asmt_footer({ pause: true });
+  asmt_branch([['moderate or high', 'Shakthi substance module offered after the main intervention'], ['always', 'A07 Your topics']]);
+  asmt_dev({
+    inputs: [['ASSIST_RESPONSE', 'risk_level across all substances. Feedback shown: ' + k]],
+    outputs: [['ASSIST_RESPONSE.feedback_shown', k], ['AUDIT_LOG', "event_type='assist_brief_feedback' · risk_level"]],
+    note: 'NEW. This is the ASSIST brief intervention: the child hears back what was reported, with no warning and no lecture, and the module is offered rather than imposed. Non-users get a strengths line, so the section gives something back to everyone who answers. Lines to be re-voiced by the chosen buddy in Tanglish once the avatar layer is wired in.'
+  });
+}
+
+// A07 / A08 per issue
+function asmt_cfSet(i, k, v) { if (!asmtS.cf[i]) asmtS.cf[i] = { freq: null, impact: null }; asmtS.cf[i][k] = v; asmt_rr(); }
+function asmt_r_A07(i) {
+  i = i || 0; var b = asmt_basket(); if (i >= b.length) i = 0;
+  var cur = asmtS.cf[i] ? asmtS.cf[i].freq : null;
+  asmt_meta('A07', 'Your topic ' + (i + 1) + ' of ' + b.length + ', how often');
+  asmt_body(
+    '<div class="thinking-pill"><span class="thinking-icon">💬</span><span>Going back to: <strong>"' + b[i].t + '"</strong></span></div>'
+    + '<div class="warm-q">How often does this happen to you?</div>'
+    + '<div class="option-list">' + ['Rarely', 'Sometimes', 'Often', 'Almost every day'].map(function (l, v) { return asmt_opt(cur === v, l, 'asmt_cfSet(' + i + ',\'freq\',' + v + ')'); }).join('') + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: cur !== null });
+  asmt_branch([['always', 'A08 for the same issue']]);
+  asmt_dev({
+    inputs: [['CLUSTER_FLAG', 'Issue ' + (i + 1) + ' of ' + b.length + ' (' + b[i].id + ')']],
+    outputs: [['CLUSTER_FLAG.pre_frequency', '0 to 3 per issue. Current: ' + (cur === null ? 'none' : cur)]],
+    note: 'Now loops once per issue in the basket. Kept OUT of the composite (your decision to confirm) and used as the per-issue before and after outcome.'
+  });
+}
+function asmt_r_A08(i) {
+  i = i || 0; var b = asmt_basket(); if (i >= b.length) i = 0;
+  var cur = asmtS.cf[i] ? asmtS.cf[i].impact : null;
+  asmt_meta('A08', 'Your topic ' + (i + 1) + ' of ' + b.length + ', how much');
+  asmt_body(
+    '<div class="thinking-pill"><span class="thinking-icon">💬</span><span>About: <strong>"' + b[i].t + '"</strong></span></div>'
+    + '<div class="warm-q">How much does it affect your day?</div>'
+    + '<div class="option-list">' + ['A little, I can manage', 'A fair amount, it gets in the way', "A lot, it's really affecting me"].map(function (l, v) { return asmt_opt(cur === v, l, 'asmt_cfSet(' + i + ',\'impact\',' + v + ')'); }).join('') + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: cur !== null });
+  asmt_branch([['more issues', 'A07 for next issue'], ['last issue', 'A08b Right now']]);
+  asmt_dev({
+    outputs: [['CLUSTER_FLAG.pre_impact', '0 to 2 per issue. Current: ' + (cur === null ? 'none' : cur)]],
+    note: 'Shown again after the intervention as the "before" answer for comparison.'
+  });
+}
+
+// A08b Distress right now
+function asmt_dist(v) { asmtS.distress = v; asmt_rr(); }
+function asmt_r_A08b() {
+  asmt_meta('A08b', 'Right now');
+  var g = '';
+  for (var v = 0; v <= 10; v++) g += '<div class="asmt-dist' + (asmtS.distress === v ? ' sel' : '') + '" role="button" tabindex="0" onclick="asmt_dist(' + v + ')">' + v + '</div>';
+  asmt_body(
+    '<div style="font-size:44px;text-align:center;animation:float 3s ease-in-out infinite">🎈</div>'
+    + '<div class="warm-q">Right now, how heavy does everything feel?</div>'
+    + '<div class="asmt-dist-grid">' + g + '</div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:10px;color:#999;font-weight:700"><span>0 · light as a feather</span><span>10 · the heaviest ever</span></div>'
+  );
+  asmt_footer({ canNext: asmtS.distress !== null });
+  asmt_branch([['always', 'CS1 Suicide screen']]);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.distress_now', '0 to 10. Current: ' + (asmtS.distress === null ? 'none' : asmtS.distress)], ['INTERVENTION.pre_mood_score', 'Seeded from distress_now']],
+    note: 'NEW. This is the in-session pre/post measure. PHQ-2 and GAD-2 ask about 2 weeks and cannot change within one session, so they stay as the baseline only.'
+  });
+}
+
+// C-SSRS screens (one question per screen)
+function asmt_cs(q, v) {
+  asmtS.cs[q] = v;
+  var c = asmtS.cs;
+  if (q === 'q2' && v === false) { c.q3 = null; c.q4 = null; c.q5 = null; }
+  if (q === 'q6' && v === false) c.q6b = null;
+  if (v === true && (q === 'q4' || q === 'q5' || q === 'q6b')) { asmt_red('suicide', 'C-SSRS ' + ASMT_CS[q].key + ' · ' + ASMT_CS[q].v + '=true'); return; }
+  asmt_csDerive();
+  asmt_rr();
+}
+function asmt_csRisk() {
+  var c = asmtS.cs, r = 0;
+  if (c.q1 === true || c.q2 === true) r = 1;
+  if (c.q1 === 'rns' || c.q2 === 'rns') r = Math.max(r, 1);
+  if (c.q3 === true || (c.q6 === true && c.q6b === false)) r = 2;
+  if (c.q3 === 'rns' || c.q4 === 'rns' || c.q5 === 'rns' || c.q6b === 'rns' || c.q6 === 'rns') r = Math.max(r, 2);
+  if (c.q4 === true || c.q5 === true || c.q6b === true) r = 3;
+  return r;
+}
+function asmt_csDerive() {
+  var r = asmt_csRisk(), c = asmtS.cs;
+  ['cssrs_low', 'cssrs_moderate', 'cssrs_nonresponse'].forEach(asmt_unflag);
+  if (r === 1) asmt_flag('cssrs_low', 'flag', 'Wish to be dead or passive ideation only. Clinician review; assessment continues.');
+  if (r === 2) asmt_flag('cssrs_moderate', 'urgent', 'Method, or past behaviour older than 3 months. Same-day clinician alert; band forced to Red Non-Emergency.');
+  var rn = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q6b'].filter(function (k) { return c[k] === 'rns'; });
+  if (rn.length) asmt_flag('cssrs_nonresponse', 'urgent', 'Chose not to answer: ' + rn.join(', ') + '. Treated as at least ' + (r >= 2 ? 'moderate' : 'low') + ' risk.');
+}
+function asmt_csScreen(q, intro, trig, note) {
+  var d = ASMT_CS[q];
+  asmt_meta(d.key, 'Staying safe');
+  asmt_body(
+    (intro ? '<div style="font-size:40px;text-align:center;animation:float 3s ease-in-out infinite">🌟</div><div class="warm-q" style="font-size:14px">' + intro + '</div>' : '')
+    + '<div class="cssrs-card"><div class="cssrs-warm warm-q" style="text-align:left;font-size:14px">' + d.t + '</div>'
+    + '<div class="cssrs-warm-sub">Even if it was just a passing thought, it\'s safe to share here</div></div>'
+    + asmt_yn(q, asmtS.cs[q], 'asmt_cs'), 'bg-light', true);
+  asmt_footer({ canNext: asmt_ans(asmtS.cs[q]), pause: true });
+  asmt_branch(trig);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.' + d.v, 'boolean or null (rather not say) · written immediately. Current: ' + JSON.stringify(asmtS.cs[q])], ['ASSESSMENT_SCORE.cssrs_risk', ['none', 'low', 'moderate', 'high'][asmt_csRisk()]]],
+    triggers: trig,
+    note: note + ' WORDING: placeholder close to the Columbia pediatric screener. Replace with the licensed Columbia text and the official Tamil translation before pilot. Triage mapping follows the standard screener; confirm or adjust for this age group.'
+  });
+}
+function asmt_r_CS1() {
+  asmt_csScreen('q1', 'I want to ask you something important. There\'s no wrong answer.',
+    [['Yes', 'cssrs_low flag · continue to CS2 (no longer an immediate Red Emergency)'], ['No', 'CS2'], ['Rather not say', 'cssrs_nonresponse · continue']],
+    'CHANGED: a Yes here was an immediate Red Emergency. A passive wish alone is the lowest tier on the C-SSRS, and many students under exam pressure will say yes.');
+}
+function asmt_r_CS2() {
+  asmt_csScreen('q2', null,
+    [['Yes', 'CS3 Method, CS4 Intent, CS5 Plan'], ['No', 'Skip to CS6 Behaviour'], ['Rather not say', 'Ask CS3 to CS5 (conservative)']],
+    'CHANGED: wording is now about killing yourself, not "hurting yourself". Self-harm without suicidal intent is a different construct.');
+}
+function asmt_r_CS3() {
+  asmt_csScreen('q3', null, [['Yes', 'cssrs_moderate · same-day alert · Red Non-Emergency band'], ['always', 'CS4 Intent']],
+    'Only shown after Q2 is Yes (or rather not say), so "this" always has a referent. Variable renamed: this is the METHOD item, not intent.');
+}
+function asmt_r_CS4() {
+  asmt_csScreen('q4', null, [['Yes', 'IMMEDIATE Red Emergency'], ['No', 'CS5 Plan']], 'NEW: the actual C-SSRS intent item, missing from the old file.');
+}
+function asmt_r_CS5() {
+  asmt_csScreen('q5', null, [['Yes', 'IMMEDIATE Red Emergency'], ['No', 'CS6 Behaviour']],
+    'Plan item. The old 48-hour imminence question is moved into the Red Protocol clinician call, where it belongs.');
+}
+function asmt_r_CS6() {
+  asmt_csScreen('q6', null, [['Yes', 'CS6b Past 3 months'], ['No', 'S1 Safety']], 'NEW: the behaviour item, asked of everyone as in the standard screener.');
+}
+function asmt_r_CS6b() {
+  asmt_csScreen('q6b', null, [['Yes', 'IMMEDIATE Red Emergency'], ['No', 'cssrs_moderate · same-day alert'], ['Rather not say', 'Treated as moderate']], 'Recency of behaviour decides high versus moderate risk.');
+}
+
+// Safety screens
+function asmt_sfSet(k, v) {
+  asmtS.sf[k] = v;
+  if (k === 'safe') {
+    if (v === false) { asmt_red('safety', 'S1 · not safe right now'); return; }
+    if (v === 'rns') asmt_flag('safety_nonresponse', 'urgent', 'Did not say whether they are safe right now.'); else asmt_unflag('safety_nonresponse');
+  }
+  if (k === 'hurt') {
+    if (v !== true) { asmtS.sf.where = null; asmtS.sf.reach = null; asmt_unflag('safeguarding_disclosure'); }
+    if (v === 'rns') asmt_flag('safeguarding_followup', 'flag', 'Chose not to say whether anyone is hurting them. Clinician to follow up privately.'); else asmt_unflag('safeguarding_followup');
+  }
+  if (k === 'reach') {
+    if (v === 'yes' || v === 'unsure') { asmt_red('safety', 'S4 · person can reach child (' + v + ')'); return; }
+    if (v === 'no') asmt_flag('safeguarding_disclosure', 'urgent', 'Child disclosed someone is hurting or scaring them' + (asmtS.sf.where === 'school' ? ' AT SCHOOL: exclude school contacts' : '') + '. POCSO designated person to be informed.');
+  }
+  asmt_rr();
+}
+function asmt_r_S1() {
+  asmt_meta('S1', 'Right now');
+  var v = asmtS.sf.safe;
+  asmt_body(
+    '<div style="font-size:44px;text-align:center;animation:float 3s ease-in-out infinite">🛡️</div>'
+    + '<div class="warm-q" style="font-size:15px">Are you safe right now, in the place where you are?</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">'
+    + '<div class="safety-opt' + (v === true ? ' sel-safe' : '') + '" role="button" tabindex="0" onclick="asmt_sfSet(\'safe\',true)"><div class="safety-opt-icon">✅</div><div class="safety-opt-title">Yes, I feel safe right now</div></div>'
+    + '<div class="safety-opt" role="button" tabindex="0" onclick="asmt_sfSet(\'safe\',false)"><div class="safety-opt-icon">🆘</div><div><div class="safety-opt-title">No, I don\'t feel safe</div><div class="safety-opt-sub">I\'ll connect you to help right away</div></div></div>'
+    + '</div>' + asmt_rns(v === 'rns', 'asmt_sfSet(\'safe\',\'rns\')'), 'bg-light', true);
+  asmt_footer({ canNext: v === true || v === 'rns', pause: true });
+  asmt_branch([['No', 'IMMEDIATE Red Emergency, safety pathway'], ['Yes', 'S2']]);
+  asmt_dev({ outputs: [['ASSESSMENT_SCORE.safe_now', JSON.stringify(v)]], note: 'Asked of every child, unchanged in intent.' });
+}
+function asmt_r_S2() {
+  asmt_meta('S2', 'Anyone hurting you');
+  asmt_body(
+    '<div class="warm-q" style="font-size:15px">Is anyone hurting you, or making you feel scared or unsafe?</div>'
+    + '<div class="warm-sub">This could be anyone, at school, at home, or anywhere else</div>'
+    + asmt_yn('hurt', asmtS.sf.hurt, 'asmt_sfSet'), 'bg-light', true);
+  asmt_footer({ canNext: asmt_ans(asmtS.sf.hurt), pause: true });
+  asmt_branch([['Yes', 'S3 Where, then S4 Can they reach you'], ['No', 'A13'], ['Rather not say', 'safeguarding_followup flag · A13']]);
+  asmt_dev({
+    outputs: [['ASSESSMENT_SCORE.hurt_disclosure', JSON.stringify(asmtS.sf.hurt)]],
+    note: 'CHANGED: replaces "Is the person who hurt you nearby?", which assumed abuse for every child. This neutral question is asked of everyone; follow-ups only on Yes.'
+  });
+}
+function asmt_r_S3() {
+  asmt_meta('S3', 'Where is this person');
+  var v = asmtS.sf.where;
+  asmt_body(
+    '<div class="warm-q">Is this person at school, at home, or somewhere else?</div>'
+    + '<div class="warm-sub">This helps me make sure help comes from the right people</div>'
+    + '<div class="option-list">'
+    + asmt_opt(v === 'school', 'At school or in the hostel', 'asmt_sfSet(\'where\',\'school\')')
+    + asmt_opt(v === 'home', 'At home', 'asmt_sfSet(\'where\',\'home\')')
+    + asmt_opt(v === 'else', 'Somewhere else', 'asmt_sfSet(\'where\',\'else\')')
+    + asmt_rns(v === 'rns', 'asmt_sfSet(\'where\',\'rns\')') + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: asmt_ans(v), pause: true });
+  asmt_branch([['school', 'All alerts carry exclude_school_contacts=true'], ['always', 'S4 Can they reach you']]);
+  asmt_dev({
+    outputs: [['SAFEGUARDING.location', JSON.stringify(v)]],
+    note: 'OPTIONAL SCREEN (your call). Asked BEFORE "can they reach you" so that if Red fires, the alert already knows not to route to school staff. In a boarding school the person may be a warden, teacher or senior.'
+  });
+}
+function asmt_r_S4() {
+  asmt_meta('S4', 'Can they reach you');
+  var v = asmtS.sf.reach;
+  asmt_body(
+    '<div class="warm-q" style="font-size:15px">Can that person reach you right now?</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px">'
+    + '<div class="safety-opt" role="button" tabindex="0" onclick="asmt_sfSet(\'reach\',\'yes\')"><div class="safety-opt-icon">⚠️</div><div><div class="safety-opt-title">Yes, they could reach me</div><div class="safety-opt-sub">I\'ll connect you to help right away</div></div></div>'
+    + '<div class="safety-opt" role="button" tabindex="0" onclick="asmt_sfSet(\'reach\',\'unsure\')"><div class="safety-opt-icon">❓</div><div class="safety-opt-title">I\'m not sure</div></div>'
+    + '<div class="safety-opt' + (v === 'no' ? ' sel-safe' : '') + '" role="button" tabindex="0" onclick="asmt_sfSet(\'reach\',\'no\')"><div class="safety-opt-icon">🛡️</div><div class="safety-opt-title">No, I\'m safe from them right now</div></div>'
+    + '</div>', 'bg-light', true);
+  asmt_footer({ canNext: v === 'no', pause: true });
+  asmt_branch([['Yes or Not sure', 'IMMEDIATE Red Emergency, safety pathway'], ['No', 'safeguarding_disclosure (same-day, POCSO) · A13']]);
+  asmt_dev({
+    outputs: [['SAFEGUARDING.can_reach', JSON.stringify(v)]],
+    triggers: [['yes / unsure', 'Red Emergency · exclude_school_contacts=' + (asmtS.sf.where === 'school')], ['no', 'Safeguarding alert to POCSO designated person, not the crisis flow']],
+    note: 'Disclosure of abuse needs reporting whether or not the person can reach the child now, so "No" still raises a same-day alert.'
+  });
+}
+
+// A13 Composite
+function asmt_compute() {
+  var bs = asmtS.bodyInt || 0, sl = asmtS.sleep || 0, ap = asmtS.appetite || 0;
+  var ph = asmt_scaleSum(asmtS.phq), gd = asmt_scaleSum(asmtS.gad);
+  var total = bs + sl + ap + ph + gd, pct = Math.round(total / asmtCfg.total_max * 100);
+  var base = 0; asmtCfg.band_pct.forEach(function (c, i) { if (pct >= c) base = i + 1; });
+  var band = base, why = [];
+  function min(b, r) { if (band < b) { band = b; why.push(r); } }
+  var phqPos = ph >= asmtCfg.phq2_cut, gadPos = gd >= asmtCfg.gad2_cut;
+  if (phqPos || gadPos) min(1, (phqPos ? 'PHQ-2' : 'GAD-2') + ' at or above cut-off → minimum Amber');
+  if (phqPos && gadPos) min(2, 'Both PHQ-2 and GAD-2 positive → minimum Orange');
+  var used = asmt_usedSubs(), suMax = 0;
+  used.forEach(function (id) { suMax = Math.max(suMax, asmt_suRisk(id)); });
+  if (suMax === 1) min(1, 'Substance moderate risk → minimum Amber');
+  if (suMax === 2) min(2, 'Substance high risk → minimum Orange');
+  var cs = asmt_csRisk(), csEsc = cs;
+  var coping = used.length > 0 && asmt_basket().some(function (x) { return x.id === 'sub6'; });
+  if (coping && cs >= 1) csEsc = Math.min(3, cs + 1);
+  if (csEsc >= 2) min(3, 'C-SSRS moderate' + (csEsc !== cs ? ' (escalated: substance use to cope)' : '') + ' → Red Non-Emergency');
+  return { bs: bs, sl: sl, ap: ap, ph: ph, gd: gd, total: total, pct: pct, base: base, band: band, why: why, cs: cs, csEsc: csEsc, coping: coping, suMax: suMax, used: used, phqPos: phqPos, gadPos: gadPos };
+}
+function asmt_r_A13() {
+  var r = asmt_compute();
+  // derived flags
+  asmt_unflag('phq2_positive'); asmt_unflag('gad2_positive'); asmt_unflag('risk_escalated_coping');
+  if (r.phqPos) asmt_flag('phq2_positive', 'flag', 'PHQ-2 = ' + r.ph);
+  if (r.gadPos) asmt_flag('gad2_positive', 'flag', 'GAD-2 = ' + r.gd);
+  if (r.csEsc !== r.cs) asmt_flag('risk_escalated_coping', 'urgent', 'Suicide screen risk raised one level because the child uses substances to cope.');
+  if (r.csEsc === 3) { asmt_red('suicide', 'A13 escalation · C-SSRS moderate + substance use to cope'); return; }
+  var missing = [asmtS.bodyInt, asmtS.sleep, asmtS.appetite].some(function (v) { return v === null; }) || asmtS.phq.concat(asmtS.gad).some(function (v) { return typeof v !== 'number'; });
+  if (missing) asmt_flag('score_incomplete', 'info', 'Some scored items missing or "rather not say"; treated as 0. Clinician to interpret with care.'); else asmt_unflag('score_incomplete');
+
+  asmt_meta('A13', 'Composite score (dev reference)');
+  var col = asmtCfg.band_colors[r.band], name = asmtCfg.band_names[r.band];
+  asmt_body(
+    '<div style="font-size:44px;text-align:center;animation:float 3s ease-in-out infinite">✨</div>'
+    + '<div class="warm-q">Thank you. You did really well getting through all of that.</div>'
+    + '<div class="warm-sub">That took a lot of honesty and courage</div>'
+    + '<div class="score-card"><div style="font-size:11px;color:#aaa;font-weight:700;margin-bottom:6px">Developer reference only, the child never sees this card</div>'
+    + '<div class="score-total">' + r.total + '</div><div style="font-size:11px;color:#aaa;font-weight:700">total_score out of ' + asmtCfg.total_max + ' · ' + r.pct + ' percent</div>'
+    + '<div class="score-bar">'
+    + '<div class="score-seg" style="flex:' + (r.bs || 0.2) + ';background:#26C6C6"></div><div class="score-seg" style="flex:' + (r.sl || 0.2) + ';background:#378ADD"></div>'
+    + '<div class="score-seg" style="flex:' + (r.ap || 0.2) + ';background:#1D9E75"></div><div class="score-seg" style="flex:' + (r.ph || 0.2) + ';background:#EF9F27"></div>'
+    + '<div class="score-seg" style="flex:' + (r.gd || 0.2) + ';background:#9B6EE0"></div></div>'
+    + '<div style="display:flex;justify-content:space-between;font-size:9px;color:#bbb;font-weight:700"><span>body</span><span>sleep</span><span>appetite</span><span>mood</span><span>worry</span></div></div>'
+    + '<div class="band-card" style="background:' + col + ';text-align:center"><div class="band-card-label" style="color:rgba(255,255,255,0.85)">Band assigned silently</div><div class="band-card-name" style="color:#fff">' + name + '</div></div>'
+  );
+  asmt_footer({ label: 'Go to my buddy' });
+
+  // band table from config
+  var mx = asmtCfg.total_max, cuts = asmtCfg.band_pct.map(function (p) { return Math.ceil(mx * p / 100); });
+  var ranges = [[0, cuts[0] - 1], [cuts[0], cuts[1] - 1], [cuts[1], cuts[2] - 1], [cuts[2], mx]];
+  var pr = ['< ' + asmtCfg.band_pct[0] + '%', asmtCfg.band_pct[0] + ' to ' + (asmtCfg.band_pct[1] - 1) + '%', asmtCfg.band_pct[1] + ' to ' + (asmtCfg.band_pct[2] - 1) + '%', '≥ ' + asmtCfg.band_pct[2] + '%'];
+  var tbl = '<table class="dev-band-table"><thead><tr><th>Band</th><th>Percent</th><th>Raw /' + mx + '</th></tr></thead><tbody>'
+    + asmtCfg.band_names.map(function (n, i) { return '<tr' + (i === r.band ? ' style="background:#2a1f3d"' : '') + '><td style="color:' + asmtCfg.band_colors[i] + '">' + n + '</td><td>' + pr[i] + '</td><td>' + ranges[i][0] + ' to ' + ranges[i][1] + '</td></tr>'; }).join('')
+    + '</tbody></table>';
+  var subTbl = r.used.length ? '<table class="dev-band-table"><thead><tr><th>Substance</th><th>Score</th><th>Risk</th></tr></thead><tbody>'
+    + r.used.map(function (id) { return '<tr><td>' + ASMT_SUBS_BY[id].name + '</td><td>' + asmt_suScore(id) + '</td><td>' + ['low', 'moderate', 'high'][asmt_suRisk(id)] + '</td></tr>'; }).join('') + '</tbody></table>'
+    : '<div class="dev-note" style="border:none;margin:0;padding:0">No substance use reported</div>';
+  var extra = '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#9B6EE0"></div><div class="dev-head-title">Band scoring, developer reference</div></div><div class="dev-body">'
+    + '<div class="dev-v">body ' + r.bs + ' + sleep ' + r.sl + ' + appetite ' + r.ap + ' + PHQ-2 ' + r.ph + ' + GAD-2 ' + r.gd + ' = <strong style="color:#EF9F27">' + r.total + '</strong> (' + r.pct + '%) → score band <strong>' + asmtCfg.band_names[r.base] + '</strong></div>'
+    + '<div class="dev-v" style="margin-top:6px">Overrides applied: ' + (r.why.length ? r.why.join('; ') : 'none') + '</div>'
+    + '<div class="dev-v" style="margin-top:6px">Final band: <strong style="color:' + col + '">' + name + '</strong> · C-SSRS risk: ' + ['none', 'low', 'moderate', 'high'][r.csEsc] + '</div>'
+    + tbl + '<div class="dev-note">Cut-points are illustrative and read from asmtCfg. The clinical team sets them; nothing is hardcoded. Frequency and impact (A07, A08) and distress_now are not in the sum.</div></div></div>'
+    + '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#1D9E75"></div><div class="dev-head-title">Substance risk (ASSIST-Y ' + asmt_suVersion() + ')</div></div><div class="dev-body">' + subTbl
+    + (asmtCfg.assist_placeholder ? '<div class="dev-note">Placeholder adult ASSIST scoring. Replace with ASSIST-Y weights.</div>' : '') + '</div></div>'
+    + '<div class="dev-card"><div class="dev-head"><div class="dev-dot" style="background:#378ADD"></div><div class="dev-head-title">Schema changes this module needs</div></div><div class="dev-body">'
+    + '<div class="dev-v">ASSESSMENT_SCORE: rename gad7_score to gad2_score and phq_score to phq2_score; add phq2_q1, phq2_q2, gad2_q1, gad2_q2, body_parts, dominant_emotion, distress_now, cssrs_q1 to cssrs_q6b (replacing suicide_q1, suicide_q2, suicide_q3_active_48h), cssrs_risk, safe_now, hurt_disclosure.<br><br>'
+    + 'CLUSTER_FLAG: add pre_frequency, pre_impact.<br><br>'
+    + 'NEW ASSIST_RESPONSE: session_id, version, substance, lifetime_use, freq_3m, item_responses, involvement_score, risk_level, injecting, supply_source.<br><br>'
+    + 'NEW CLINICIAN_ALERT: session_id, code, level (flag, urgent, realtime), source, exclude_school_contacts, created_at, acknowledged_by, acknowledged_at.<br><br>'
+    + 'NEW SAFEGUARDING: session_id, location, can_reach, pocso_notified_at.</div></div></div>';
+  asmt_branch([['Green / Amber / Orange', 'Avatar module at that band, with pre/post'], ['Red Non-Emergency', 'Short standard module, helplines offered (Prototype 6 Red NE)']]);
+  asmt_dev({
+    inputs: [['All ASSESSMENT_SCORE fields', 'plus ASSIST_RESPONSE and C-SSRS risk']],
+    outputs: [['ASSESSMENT_SCORE.total_score', String(r.total)], ['SESSION.band', name + ' · never shown to child'], ['AUDIT_LOG', "event_type='assessment_complete' · band · total_score"]],
+    triggers: [['score band', 'from asmtCfg.band_pct'], ['PHQ-2 or GAD-2 positive', 'min Amber (both: min Orange)'], ['substance moderate / high', 'min Amber / min Orange'], ['C-SSRS moderate', 'Red Non-Emergency'], ['coping use + any C-SSRS yes', 'risk raised one level; high goes to Red Emergency']],
+    extra: extra
+  });
+}
+
+// ===================== RED EMERGENCY =====================
+function asmt_red(mode, source) {
+  var exclude = asmtS.sf.where === 'school' || asmtS.su.source.indexOf('adult_school') > -1;
+  asmt_flag('red_emergency', 'realtime', 'Mode: ' + mode + '. Source: ' + source + (exclude ? '. exclude_school_contacts=true' : ''));
+  asmtS.red = { mode: mode, source: source, exclude: exclude };
+  document.getElementById('asmt-sid').textContent = 'RED';
+  document.getElementById('asmt-spos').textContent = 'Red Emergency, ' + mode + ' pathway';
+  document.getElementById('asmt-pfill').style.width = '100%';
+  var msg = {
+    suicide: ['You are not alone', 'You did something really brave by sharing this. I\'m going to stay right here with you, and I\'m connecting you to someone who truly cares.', ['tele', 'emerg']],
+    safety: ['Let\'s get you safe', 'Thank you for telling me. You did the right thing. I\'m getting you help right now, and I\'ll stay with you.', ['child', 'emerg', 'tele']],
+    medical: ['Let\'s get you checked right away', 'Please find a nurse or an adult you trust near you now, and show them this screen. If you feel very unwell, call for an ambulance.', ['amb', 'emerg', 'child']]
+  }[mode];
+  var pb = document.getElementById('asmt-pb');
+  pb.className = 'phone-body';
+  pb.innerHTML = '<div class="bg-red" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;gap:14px">'
+    + '<div style="font-size:48px;animation:pulse 1.5s ease-in-out infinite">' + (mode === 'medical' ? '🩺' : '💜') + '</div>'
+    + '<div class="warm-q" style="font-size:19px;color:#791F1F">' + msg[0] + '</div>'
+    + '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #F09595;font-size:12px;color:#A32D2D;font-weight:700;line-height:1.7">' + msg[1] + '</div>'
+    + asmt_helplines(msg[2]) + '<div id="asmt-red-status"></div></div>';
+  document.getElementById('asmt-pf').innerHTML = '<div class="btn-row"><div class="btn btn-p" style="background:linear-gradient(135deg,#E24B4A,#D4537E)" role="button" tabindex="0" onclick="asmt_redGo()">Talk to someone now</div></div>';
+  asmt_branch([['red_emergency_flag = true', 'Hand off to Red Protocols (Prototype 6), ' + mode + ' pathway · single path, no back']]);
+  asmt_dev({
+    outputs: [['SESSION.red_emergency_flag', 'true · written immediately'], ['SESSION.red_mode', mode],
+      ['CLINICIAN_ALERT', "level='realtime' · code='red_emergency' · source='" + source + "' · exclude_school_contacts=" + exclude],
+      ['AUDIT_LOG', "event_type='red_emergency' · source · timestamp"]],
+    triggers: [['always', 'Red Protocols module · no band routing · assessment stops']],
+    note: 'FIXED: the old file wrote no clinician alert, showed debug text to the child, showed no helplines, and the help button did nothing. Numbers match Prototypes 5 and 6. Tapping a number dials it on a phone. The alert must reach a human in real time; the on-call rota is a service design decision outside this screen.'
+  });
+  asmt_navActive('RED');
+}
+function asmt_redGo() {
+  document.getElementById('asmt-red-status').innerHTML = '<div class="note-card nc-purple" style="text-align:left"><span class="nc-icon">⏳</span><span>Connecting you to someone now. Stay with me, I\'m right here.</span></div>';
+  asmt_flag('red_handoff_started', 'realtime', 'Child tapped "Talk to someone now". Prototype 6 takes over from here.');
+  asmt_dev({ outputs: [['AUDIT_LOG', "event_type='red_handoff' · target='Prototype 6 Red Protocols'"]], note: 'In the merged app this opens Red Protocols RE01 with red_mode and the alert id.' });
+}
+
+// ===================== SIDEBAR =====================
+function asmt_buildNav() {
+  var h = '';
+  ASMT_NAV.forEach(function (sec) {
+    h += '<div class="nav-section-label">' + sec.label + '</div>';
+    sec.items.forEach(function (it) {
+      h += '<div class="nav-item" id="asmt-ni-' + it[0] + '" role="button" tabindex="0" onclick="asmt_jump(\'' + it[0] + '\')"><span class="nav-item-num">' + it[0] + '</span><span style="flex:1">' + it[1] + '</span><span class="nav-flag f-' + it[2] + '">' + (it[2] === 'cond' ? 'if' : it[2]) + '</span></div>';
+    });
+  });
+  h += '<div class="nav-section-label">Red Emergency demos</div>';
+  [['suicide', 'Suicide pathway'], ['safety', 'Safety pathway'], ['medical', 'Medical pathway']].forEach(function (m) {
+    h += '<div class="nav-item" role="button" tabindex="0" onclick="asmt_red(\'' + m[0] + '\',\'demo\')"><span class="nav-item-num">RED</span><span style="flex:1">' + m[1] + '</span><span class="nav-flag f-red">red</span></div>';
+  });
+  document.getElementById('asmt-nav').innerHTML = h;
+}
+function asmt_navActive(k) {
+  var items = document.querySelectorAll('#asmt-nav .nav-item');
+  for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+  var el = document.getElementById('asmt-ni-' + k);
+  if (el) { el.classList.add('active'); el.scrollIntoView({ block: 'nearest' }); }
+}
+function asmt_devAge(v) { asmtS.age = parseInt(v, 10); asmt_rr(); }
+function asmt_devBasket(v) { asmtS.basketKey = v; asmtS.cf = {}; if (asmtS.cur.key === 'A07' || asmtS.cur.key === 'A08') asmtS.cur.arg = 0; asmt_rr(); }
+function asmt_devConsent(k, v) { asmtS.consent[k] = v; asmt_rr(); }
+function asmt_buildDevCtl() {
+  var ages = ''; for (var a = 10; a <= 18; a++) ages += '<option value="' + a + '"' + (a === asmtS.age ? ' selected' : '') + '>' + a + '</option>';
+  var bs = ''; Object.keys(ASMT_BASKETS).forEach(function (k) { bs += '<option value="' + k + '"' + (k === asmtS.basketKey ? ' selected' : '') + '>' + ASMT_BASKETS[k].label + '</option>'; });
+  document.getElementById('asmt-devctl').innerHTML =
+    '<div class="nav-section-label" style="padding:0">Demo controls</div>'
+    + '<label for="asmt-age">Child age</label><select id="asmt-age" onchange="asmt_devAge(this.value)">' + ages + '</select>'
+    + '<label for="asmt-basket">Issue basket</label><select id="asmt-basket" onchange="asmt_devBasket(this.value)">' + bs + '</select>'
+    + '<div class="chk"><input type="checkbox" id="asmt-c-parent" checked onchange="asmt_devConsent(\'parent\',this.checked)"><label for="asmt-c-parent" style="margin:0">Parent consent</label></div>'
+    + '<div class="chk"><input type="checkbox" id="asmt-c-assent" checked onchange="asmt_devConsent(\'assent\',this.checked)"><label for="asmt-c-assent" style="margin:0">Child assent</label></div>'
+    + '<div class="chk"><input type="checkbox" id="asmt-c-bio" checked onchange="asmt_devConsent(\'bio\',this.checked)"><label for="asmt-c-bio" style="margin:0">Biometric opt-in</label></div>';
+}
+
+// Keyboard: Enter or Space activates role=button elements
+function asmt_key(e) {
+  var t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t && t.getAttribute && t.getAttribute('role') === 'button') { e.preventDefault(); t.click(); }
+}
+
+// ===================== INIT =====================
+function asmt_init() {
+  asmt_reset();
+  asmt_buildNav();
+  asmt_buildDevCtl();
+  document.addEventListener('keydown', asmt_key);
+  asmt_go({ key: 'A00', arg: null });
+}
+asmt_init();
+
+</script>
+</body>
+</html>

@@ -955,3 +955,112 @@
   overflow: hidden;
   min-height: 0;
 }
+
+/* ── assessment inside the chat (src/assessment) ─────────────────────── */
+.asmt-sub {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #8f86bc;
+  margin: 0.2rem 0;
+}
+.asmt-link {
+  align-self: center;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 750;
+  color: var(--aram-purple);
+  cursor: pointer;
+  padding: 0.6rem 1rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.asmt-pills {
+  margin-top: 0;
+}
+.asmt-pills .pill {
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(80, 60, 140, 0.07);
+}
+.asmt-grid11 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.6rem;
+}
+.asmt-grid11 .pill {
+  justify-content: center;
+  padding: 1rem 0;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(80, 60, 140, 0.07);
+}
+.asmt-label {
+  margin-left: 0;
+  text-align: center;
+}
+.asmt-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: #fff;
+  border-radius: 1.4rem;
+  padding: 0.9rem 1.1rem;
+  box-shadow: 0 2px 10px rgba(80, 60, 140, 0.07);
+}
+.asmt-sub-em {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+.asmt-sub-txt {
+  flex: 1;
+  min-width: 0;
+}
+.asmt-chip {
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 800;
+  padding: 0.6rem 1.1rem;
+  border-radius: 1.2rem;
+  border: 1.5px solid #e2dcf4;
+  background: #fbf9ff;
+  color: #6c6590;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.asmt-chip.on-no {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.asmt-chip.on-yes {
+  background: var(--aram-purple);
+  border-color: var(--aram-purple);
+  color: #fff;
+}
+.asmt-help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.asmt-help {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  border: 1.5px solid #f3c3c3;
+  border-radius: 1.4rem;
+  padding: 1.1rem 1.3rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #7a1f1f;
+  text-decoration: none;
+}
+.asmt-help-tx {
+  flex: 1;
+}
+.asmt-help-num {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--red);
+}
