@@ -28,6 +28,7 @@ export const ROUTES = {
   issues: '/session/cluster/:clusterId/:subId', // C03 what is happening
   basket: '/session/basket', // C05 review + C06 confirm
   chat: '/session/chat', // C07 counsellor chat about the chosen topics
+  buddies: '/buddies', // "My Buddies": pick friend / parent / counsellor and chat directly
   redEmergency: '/session/red/:issueId', // RED immediate-risk path
 } as const
 

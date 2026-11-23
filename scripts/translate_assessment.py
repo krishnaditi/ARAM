@@ -5,6 +5,8 @@ src/i18n/en.json) into Hindi, Tamil, Telugu and Malayalam, through OpenRouter.
 
     python3 scripts/translate_assessment.py            # all four languages
     python3 scripts/translate_assessment.py ta ml      # just these
+    python3 scripts/translate_assessment.py --keys persona,red.bandT   # only new strings,
+                                            # merged into the existing translations
 
 Re-run it whenever the English assessment copy changes. It reads OPENROUTER_API_KEY and
 OPENROUTER_MODEL from backend/.env and touches nothing but the `assessment` section,
@@ -128,16 +130,46 @@ def write_section(path: Path, section: dict) -> None:
     json.loads(path.read_text(encoding="utf-8"))  # still valid JSON
 
 
+def pick(d: dict, paths: list[str]) -> dict:
+    """The parts of `d` named by dotted paths, keeping their nesting."""
+    out: dict = {}
+    for path in paths:
+        src, dst = d, out
+        *parents, leaf = path.split(".")
+        for part in parents:
+            src = src[part]
+            dst = dst.setdefault(part, {})
+        dst[leaf] = src[leaf]
+    return out
+
+
+def merge(base: dict, extra: dict) -> dict:
+    for k, v in extra.items():
+        base[k] = merge(base.get(k, {}), v) if isinstance(v, dict) and isinstance(base.get(k), dict) else v
+    return base
+
+
 def main() -> None:
-    langs = sys.argv[1:] or list(LANGS)
+    args = sys.argv[1:]
+    keys: list[str] = []
+    if "--keys" in args:
+        i = args.index("--keys")
+        keys = [k for k in args[i + 1].split(",") if k]
+        del args[i : i + 2]
+    langs = args or list(LANGS)
     key, model = env()
     source = json.loads((I18N / "en.json").read_text(encoding="utf-8"))[SECTION]
+    if keys:
+        source = pick(source, keys)
     print(f"Translating {len(flatten(source))} strings into {', '.join(langs)} with {model}")
 
     def run(code: str) -> str:
         with ThreadPoolExecutor(max_workers=4) as pool:
             parts = {name: pool.submit(translate_chunk, key, model, LANGS[code], name, chunk) for name, chunk in source.items()}
             translated = {name: future.result() for name, future in parts.items()}
+        if keys:
+            current = json.loads((I18N / f"{code}.json").read_text(encoding="utf-8")).get(SECTION, {})
+            translated = merge(current, translated)
         write_section(I18N / f"{code}.json", translated)
         return code
 

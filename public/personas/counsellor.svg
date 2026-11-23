@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="A counsellor">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B99BF0"/><stop offset="1" stop-color="#7B4FCF"/></linearGradient></defs>
+  <circle cx="80" cy="80" r="80" fill="url(#g)"/>
+  <!-- blazer + shirt -->
+  <path d="M28 160c4-32 25-48 52-48s48 16 52 48z" fill="#2F3B66"/>
+  <path d="M66 112l14 22 14-22z" fill="#fff"/>
+  <path d="M80 118l-5 8 5 18 5-18z" fill="#26C6C6"/>
+  <!-- neck + face -->
+  <rect x="70" y="94" width="20" height="20" rx="8" fill="#A86F47"/>
+  <circle cx="80" cy="74" r="29" fill="#B97A50"/>
+  <!-- short hair -->
+  <path d="M51 72c-2-22 12-34 29-34s31 12 29 34c-4-10-10-16-18-18-10 6-24 7-40 18z" fill="#22180F"/>
+  <!-- glasses -->
+  <circle cx="69" cy="78" r="8" fill="none" stroke="#22180F" stroke-width="3"/>
+  <circle cx="91" cy="78" r="8" fill="none" stroke="#22180F" stroke-width="3"/>
+  <path d="M77 78h6M61 77l-9-2M99 77l9-2" stroke="#22180F" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="69" cy="78" r="2.5" fill="#22180F"/><circle cx="91" cy="78" r="2.5" fill="#22180F"/>
+  <path d="M71 92c5 5 13 5 18 0" fill="none" stroke="#22180F" stroke-width="3" stroke-linecap="round"/>
+  <!-- speech bubble -->
+  <path d="M110 26h34a8 8 0 0 1 8 8v18a8 8 0 0 1-8 8h-20l-10 9v-9h-4a8 8 0 0 1-8-8V34a8 8 0 0 1 8-8z" fill="#fff"/>
+  <circle cx="117" cy="43" r="3" fill="#7B4FCF"/><circle cx="127" cy="43" r="3" fill="#7B4FCF"/><circle cx="137" cy="43" r="3" fill="#7B4FCF"/>
+</svg>

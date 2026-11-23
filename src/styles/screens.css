@@ -1462,3 +1462,27 @@
   gap: 0.7rem;
   padding-top: 0.4rem;
 }
+
+/* "My Buddies" dashboard card: a button, with the three persona faces */
+.quick-card-btn {
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+.buddy-faces {
+  display: flex;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.buddy-faces img {
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(80, 60, 140, 0.18);
+}
+.buddy-faces img + img {
+  margin-left: -0.9rem;
+}

@@ -156,14 +156,21 @@ class AssessmentContext(BaseModel):
     summary: str = Field(default="", max_length=6000)
     next_block: Literal["feelings", "mood", "topics", "substances", "safety"] | None = None
     finished: bool = False
+    # Set after the assessment: the band (internal) and the persona the student chose.
+    band: Literal["Green", "Amber", "Orange"] | None = None
+    persona: Literal["counsellor", "friend", "parent"] | None = None
 
 
 class ChatInput(BaseModel):
     language: str = Field(pattern=r"^(en|hi|ta|te|ml)$")
-    topics: list[ChatTopic] = Field(min_length=1, max_length=3)
+    # Empty when the student opens a buddy chat straight from the dashboard ("My Buddies").
+    topics: list[ChatTopic] = Field(default_factory=list, max_length=3)
     # Only the recent part of the conversation is sent, which also caps the cost.
     messages: list[ChatTurn] = Field(default_factory=list, max_length=40)
     assessment: AssessmentContext | None = None
+    # "session": after choosing topics (and the assessment). "direct": a buddy chat opened
+    # from the dashboard, with no topics and no assessment.
+    entry: Literal["session", "direct"] = "session"
 
 
 class ChildFaceLogin(BaseModel):
@@ -428,6 +435,7 @@ def counsellor_chat(payload: ChatInput) -> dict[str, Any]:
             [topic.model_dump() for topic in payload.topics],
             [turn.model_dump() for turn in payload.messages],
             payload.assessment.model_dump() if payload.assessment else None,
+            payload.entry,
         )
     except counsellor.CounsellorError as error:
         logger.warning("chat failed: %s (%s)", error.code, error)

@@ -8,6 +8,7 @@ import { useSession } from '../state/sessionStore'
 import { api, type ReturningContext } from '../lib/api'
 import { isBackendConfigured } from '../lib/backendClient'
 import { useGreeting } from '../lib/useGreeting'
+import { PERSONAS } from '../assessment/personas'
 
 export default function S10Home() {
   const nav = useNavigate()
@@ -62,7 +63,15 @@ export default function S10Home() {
   const quickActions = [
     { icon: '🌬️', iconCls: 'teal', title: t('s10.quickBreathing'), sub: t('s10.quickBreathingSub') },
     { icon: '📈', iconCls: 'blue', title: t('s10.myProgress'), sub: t('s10.myProgressSub') },
-    { icon: '✨', iconCls: 'pink', title: t('s10.myBuddies'), sub: t('s10.myBuddiesSub') },
+    {
+      icon: '✨',
+      iconCls: 'pink',
+      title: t('s10.myBuddies'),
+      sub: t('s10.myBuddiesSub'),
+      // Friend, parent and counsellor: pick one and chat straight away.
+      onClick: () => nav(ROUTES.buddies),
+      faces: true,
+    },
   ]
 
   return (
@@ -123,15 +132,34 @@ export default function S10Home() {
             <div className="session-btn-arrow">→</div>
           </button>
           <div className="quick-grid-3">
-            {quickActions.map((qa, i) => (
-              <div className={`quick-card${i === quickActions.length - 1 ? ' quick-card-wide' : ''}`} key={qa.title}>
-                <div className={`quick-card-icon ${qa.iconCls}`}>{qa.icon}</div>
-                <div>
-                  <div className="quick-card-title">{qa.title}</div>
-                  <div className="quick-card-sub">{qa.sub}</div>
+            {quickActions.map((qa, i) => {
+              const wide = i === quickActions.length - 1 ? ' quick-card-wide' : ''
+              const body = (
+                <>
+                  <div className={`quick-card-icon ${qa.iconCls}`}>{qa.icon}</div>
+                  <div>
+                    <div className="quick-card-title">{qa.title}</div>
+                    <div className="quick-card-sub">{qa.sub}</div>
+                  </div>
+                  {'faces' in qa && (
+                    <div className="buddy-faces" aria-hidden="true">
+                      {PERSONAS.map((p) => (
+                        <img key={p.id} src={p.img} alt="" width={36} height={36} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )
+              return 'onClick' in qa ? (
+                <button type="button" className={`quick-card quick-card-btn${wide}`} key={qa.title} onClick={qa.onClick}>
+                  {body}
+                </button>
+              ) : (
+                <div className={`quick-card${wide}`} key={qa.title}>
+                  {body}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 

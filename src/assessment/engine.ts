@@ -277,7 +277,8 @@ export function nextStep(block: BlockId, s: AsmtState, nTopics: number): StepId 
 }
 
 // ===================== ANSWERS =====================
-export type RedMode = 'suicide' | 'safety' | 'medical'
+/** `band` is the Red Non-Emergency band at the end: no AI chat, straight to people who can help. */
+export type RedMode = 'suicide' | 'safety' | 'medical' | 'band'
 export interface Red {
   mode: RedMode
   source: string

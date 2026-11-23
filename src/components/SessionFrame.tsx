@@ -30,6 +30,8 @@ interface SessionFrameProps {
   /** Once the options are on screen, the latest question is pinned to the top
    *  instead of the view sitting at the bottom of the list. */
   alignTop?: boolean
+  /** Replaces ARAM's header avatar and name, e.g. with the persona the student chose. */
+  head?: { name: string; img: string }
   children: ReactNode
 }
 
@@ -46,6 +48,7 @@ export default function SessionFrame({
   warnOnLeave = true,
   scrollKey,
   alignTop,
+  head,
   children,
 }: SessionFrameProps) {
   const { t } = useTranslation()
@@ -101,9 +104,9 @@ export default function SessionFrame({
     <Screen progress={progress} bodyClass="app-body-fixed" hideLogout>
       <div className="chat-screen">
         <div className="chat-head">
-          <div className="chat-av">💜</div>
+          <div className="chat-av">{head ? <img src={head.img} alt="" className="chat-av-img" /> : '💜'}</div>
           <div className="chat-head-text">
-            <div className="chat-head-name">{t('cluster.ui.headName')}</div>
+            <div className="chat-head-name">{head ? head.name : t('cluster.ui.headName')}</div>
             <div className="chat-head-status">
               <i />
               {t('cluster.ui.headStatus')}

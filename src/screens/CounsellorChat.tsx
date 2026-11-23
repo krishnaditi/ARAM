@@ -15,6 +15,7 @@ import {
   type ChatResult,
   type ChatTopic,
   type ChatTurn,
+  type Persona,
 } from '../lib/counsellorApi'
 import {
   ASMT_CFG,
@@ -35,6 +36,8 @@ import { buildQuestion, canPause, escapeHtml } from '../assessment/questions'
 import { summariseForCounsellor } from '../assessment/summary'
 import AssessmentOptions from '../assessment/AssessmentOptions'
 import ScoreCard from '../assessment/ScoreCard'
+import PersonaPicker from '../assessment/PersonaPicker'
+import { PERSONAS } from '../assessment/personas'
 
 /**
  * The session plan: a little conversation, a few tap questions, more conversation, and so
@@ -76,6 +79,14 @@ const RED_LINES: Record<Red['mode'], Helpline[]> = {
   suicide: ['tele', 'emerg'],
   safety: ['child', 'emerg', 'tele'],
   medical: ['amb', 'emerg', 'child'],
+  band: ['tele', 'child', 'emerg'],
+}
+
+/** How the chosen persona is named to the model in the hand-over note. */
+const PERSONA_ROLE: Record<Persona, string> = {
+  friend: 'a caring friend',
+  parent: 'a warm, caring parent figure',
+  counsellor: 'a school counsellor',
 }
 
 /** Model output is shown in the same bubbles as ARAM's own copy, which render HTML, so it
@@ -116,6 +127,11 @@ export default function CounsellorChat() {
   const [red, setRed] = useState<Red | null>(null)
   const [paused, setPaused] = useState(false)
   const [pauseHelp, setPauseHelp] = useState(false)
+  /** After a Green/Amber/Orange result the student picks who to talk with. */
+  const [choosingPersona, setChoosingPersona] = useState(false)
+  const [persona, setPersona] = useState<Persona | null>(null)
+  const personaRef = useRef<Persona | null>(null)
+  const resultRef = useRef<AsmtResult | null>(null)
   /** What to do once the pending reply arrives (start a block), kept for Retry. */
   const afterReplyRef = useRef<(() => void) | null>(null)
 
@@ -156,6 +172,9 @@ export default function CounsellorChat() {
       ),
       next_block: nextBlock,
       finished: res !== null,
+      // Red never reaches the chat, so only the three chat bands are ever sent.
+      band: res && res.band < 3 ? (ASMT_CFG.bandNames[res.band] as 'Green' | 'Amber' | 'Orange') : undefined,
+      persona: personaRef.current ?? undefined,
     }),
     [],
   )
@@ -228,6 +247,7 @@ export default function CounsellorChat() {
         const done = finish(state, basket.map((b) => b.issueId))
         setAsmt(done.state)
         setResult(done.result)
+        resultRef.current = done.result
         logEvent(
           'assessment_complete',
           `band=${ASMT_CFG.bandNames[done.result.band]} · total=${done.result.total}/${ASMT_CFG.totalMax}`,
@@ -236,10 +256,21 @@ export default function CounsellorChat() {
           await enterRed(done.red)
           return
         }
+        // Red band: no AI chat at all, straight to people who can help.
+        if (done.result.band === 3) {
+          await enterRed({ mode: 'band', source: `A13 band ${ASMT_CFG.bandNames[3]}` })
+          return
+        }
         res = done.result
         await chat.say(t('assessment.ui.finished'), 700)
         // Where the staff-only score card appears (rendered only while Staff view is on).
         chat.slot('score')
+        // Green, Amber or Orange: the student chooses who to talk with next.
+        await chat.say(`<b>${t('assessment.persona.title')}</b><br>${t('assessment.persona.sub')}`, 700)
+        setPhaseIdx(idx + 1)
+        setChatTurns(0)
+        setChoosingPersona(true)
+        return
       }
       const chatIdx = idx + 1
       setPhaseIdx(chatIdx)
@@ -255,6 +286,22 @@ export default function CounsellorChat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [basket, chat, context, enterRed, logEvent, setAsmt, t],
   )
+
+  const pickPersona = (p: Persona) => {
+    setChoosingPersona(false)
+    personaRef.current = p
+    setPersona(p)
+    logEvent('persona_chosen', p)
+    chat.user(t('assessment.persona.picked', { name: t(`assessment.persona.${p}.name`) }))
+    const note =
+      `(The student has now answered all the quick questions and chose to talk with ${PERSONA_ROLE[p]}, so from now on you speak in that role. ` +
+      'Their answers are listed under "What the student has answered so far". Do not greet them as if for the first time and do not re-introduce the app. ' +
+      'In 2 or 3 sentences, in your new role, thank them warmly for answering everything, then carry on with their topics with one easy question. ' +
+      'From here on you can gently offer small, practical ideas when you understand enough.)'
+    const turns: ChatTurn[] = [...historyRef.current, { role: 'user', content: note }]
+    setHistory(turns)
+    void askTracked(turns, context(null, resultRef.current))
+  }
 
   const startBlock = useCallback(
     (idx: number) => {
@@ -286,7 +333,7 @@ export default function CounsellorChat() {
   if (basket.length === 0) return <Navigate to={ROUTES.home} replace />
 
   const phase = PLAN[phaseIdx]
-  const inChat = 'chat' in phase && !red
+  const inChat = 'chat' in phase && !red && !choosingPersona
 
   const send = (value: string) => {
     if (!('chat' in phase)) return
@@ -361,6 +408,7 @@ export default function CounsellorChat() {
           ? `${ASMT_CFG.bandNames[result.band]} · total ${result.total}/${ASMT_CFG.totalMax} (${result.pct}%)${result.why.length ? ' · ' + result.why.join('; ') : ''}`
           : 'after the safety block',
       },
+      { k: 'persona', v: persona ?? (result ? (result.band === 3 ? 'none · Red band goes to emergency contacts' : 'being chosen') : 'after the band') },
       { k: 'storage', v: 'Session audit log only. No assessment tables exist in the database yet.' },
     ],
     triggers: [{ c: '✕', a: '→ session ends, back to home' }],
@@ -379,8 +427,13 @@ export default function CounsellorChat() {
       dev={dev}
       warnOnLeave={false}
       composer={inChat && !waiting && !failed ? { placeholder: t('cluster.ui.chatPlaceholder'), onSend: send, minLength: 1 } : null}
-      scrollKey={`${chat.nodes.length}-${waiting ? 1 : 0}-${failed ?? ''}-${crisis ? 1 : 0}-${step ?? ''}-${paused ? 1 : 0}-${red ? 1 : 0}`}
+      scrollKey={`${chat.nodes.length}-${choosingPersona ? 1 : 0}-${waiting ? 1 : 0}-${failed ?? ''}-${crisis ? 1 : 0}-${step ?? ''}-${paused ? 1 : 0}-${red ? 1 : 0}`}
       alignTop={Boolean(showOptions)}
+      head={
+        persona
+          ? { name: t(`assessment.persona.${persona}.name`), img: PERSONAS.find((x) => x.id === persona)!.img }
+          : undefined
+      }
     >
       <ChatStream
         nodes={chat.nodes}
@@ -399,6 +452,8 @@ export default function CounsellorChat() {
           </span>
         </div>
       )}
+
+      {choosingPersona && !chat.typing && <PersonaPicker onPick={pickPersona} />}
 
       {showOptions && question && (
         <AssessmentOptions

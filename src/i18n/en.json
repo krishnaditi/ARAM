@@ -1045,7 +1045,28 @@
       "tele": "Tele-MANAS, talk to a counsellor",
       "child": "Childline, help for children",
       "emerg": "Emergency",
-      "amb": "Ambulance"
+      "amb": "Ambulance",
+      "bandT": "💜 I'm really glad you told me all of this.",
+      "bandB": "From what you've shared, things feel very heavy for you right now, and you deserve to talk to a real person today. Please call one of these numbers, or show this screen to a teacher, warden or adult you trust. They are free and they are there for you any time."
+    },
+    "persona": {
+      "title": "Who would you like to talk with now? 💬",
+      "sub": "Pick whoever feels right today. You can be yourself with any of them.",
+      "friend": {
+        "name": "A friend",
+        "desc": "Casual and fun, like a kind senior who gets it"
+      },
+      "parent": {
+        "name": "A parent",
+        "desc": "Warm and caring, like a loving amma or appa"
+      },
+      "counsellor": {
+        "name": "A counsellor",
+        "desc": "Calm and helpful, like a school counsellor"
+      },
+      "picked": "I'd like to talk with {{name}}",
+      "buddiesTitle": "Hi! Who would you like to talk with today? 💜",
+      "buddiesSub": "Pick one of your buddies and just start chatting. You can come back and pick someone else any time."
     }
   }
 }

@@ -30,7 +30,12 @@ export interface AssessmentContext {
   next_block: 'feelings' | 'mood' | 'topics' | 'substances' | 'safety' | null
   /** True once every block is done and the conversation is open-ended. */
   finished: boolean
+  /** After the assessment: the band (internal, never shown) and who the student chose. */
+  band?: 'Green' | 'Amber' | 'Orange'
+  persona?: Persona
 }
+
+export type Persona = 'friend' | 'parent' | 'counsellor'
 
 export type ChatResult =
   | { ok: true; reply: string; crisis: boolean }
@@ -45,6 +50,8 @@ export async function askCounsellor(
   messages: ChatTurn[],
   signal?: AbortSignal,
   assessment?: AssessmentContext,
+  /** 'direct' = a buddy chat opened from the dashboard, with no topics or assessment. */
+  entry: 'session' | 'direct' = 'session',
 ): Promise<ChatResult> {
   if (!baseUrl) return { ok: false, reason: 'not_configured' }
   let recent = messages.slice(-MAX_TURNS)
@@ -54,7 +61,7 @@ export async function askCounsellor(
     const response = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ language, topics, messages: recent, assessment }),
+      body: JSON.stringify({ language, topics, messages: recent, assessment, entry }),
       signal,
     })
     if (response.ok) {
