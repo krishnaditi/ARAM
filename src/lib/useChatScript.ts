@@ -46,6 +46,8 @@ export interface ChatController {
   /** Appends outside a script — for turns driven by a tap rather than by the script. */
   say: (text: string, ms?: number, cls?: string) => Promise<void>
   user: (text: string) => void
+  /** Reserves a place in the stream for the screen to render into, outside a script. */
+  slot: (name: string) => void
   /** Drops the last n nodes — used to retract the emotion prompt once answered. */
   clear: () => void
 }
@@ -153,7 +155,18 @@ export function useChatScript(): ChatController {
     [makeScript],
   )
 
+  const slot = useCallback(
+    (name: string) => {
+      try {
+        makeScript(seq.current).slot(name)
+      } catch (e) {
+        if (e !== CANCELLED) throw e
+      }
+    },
+    [makeScript],
+  )
+
   const clear = useCallback(() => setNodes([]), [])
 
-  return { nodes, typing, run, say, user, clear }
+  return { nodes, typing, run, say, user, slot, clear }
 }

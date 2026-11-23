@@ -34,6 +34,7 @@ import {
 import { buildQuestion, canPause, escapeHtml } from '../assessment/questions'
 import { summariseForCounsellor } from '../assessment/summary'
 import AssessmentOptions from '../assessment/AssessmentOptions'
+import ScoreCard from '../assessment/ScoreCard'
 
 /**
  * The session plan: a little conversation, a few tap questions, more conversation, and so
@@ -92,6 +93,7 @@ export default function CounsellorChat() {
   const chat = useChatScript()
   const basket = useSession((s) => s.basket)
   const logEvent = useSession((s) => s.logEvent)
+  const staffView = useSession((s) => s.staffView)
   const language = useOnboarding((s) => s.language)
 
   const [history, setHistoryState] = useState<ChatTurn[]>([])
@@ -236,6 +238,8 @@ export default function CounsellorChat() {
         }
         res = done.result
         await chat.say(t('assessment.ui.finished'), 700)
+        // Where the staff-only score card appears (rendered only while Staff view is on).
+        chat.slot('score')
       }
       const chatIdx = idx + 1
       setPhaseIdx(chatIdx)
@@ -378,7 +382,11 @@ export default function CounsellorChat() {
       scrollKey={`${chat.nodes.length}-${waiting ? 1 : 0}-${failed ?? ''}-${crisis ? 1 : 0}-${step ?? ''}-${paused ? 1 : 0}-${red ? 1 : 0}`}
       alignTop={Boolean(showOptions)}
     >
-      <ChatStream nodes={chat.nodes} typing={chat.typing || waiting} />
+      <ChatStream
+        nodes={chat.nodes}
+        typing={chat.typing || waiting}
+        slots={{ score: staffView && result ? <ScoreCard result={result} state={asmt} /> : null }}
+      />
 
       {crisis && !red && (
         <div className="note-card pink" role="alert">

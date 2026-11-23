@@ -30,7 +30,7 @@ export interface Option {
 export type Question =
   | { kind: 'info'; bubbles: string[]; button: string }
   | { kind: 'single'; bubbles: string[]; options: Option[]; gloss?: string; layout?: 'list' | 'pills' | 'grid11' }
-  | { kind: 'multi'; bubbles: string[]; options: Option[]; exclusive: string[] }
+  | { kind: 'multi'; bubbles: string[]; options: Option[]; exclusive: string[]; figure?: 'body' }
   | { kind: 'ever'; bubbles: string[] }
 
 export function escapeHtml(text: string): string {
@@ -43,6 +43,8 @@ export function escapeHtml(text: string): string {
 }
 
 const sub = (text: string) => `<span class="asmt-sub">${text}</span>`
+/** The large floating emoji the prototype puts at the top of a screen. */
+const hero = (emoji: string) => `<span class="asmt-hero" aria-hidden="true">${emoji}</span>`
 
 /** "Can pause" steps are the ones the prototype offered a break on. */
 export function canPause(step: StepId): boolean {
@@ -79,6 +81,7 @@ export function buildQuestion(step: StepId, s: AsmtState, t: TFunction, topics: 
         ],
         options: BODY_PARTS.map((p) => ({ value: p, label: t(`assessment.body.parts.${p}`) })),
         exclusive: ['mind'],
+        figure: 'body',
       }
     case 'A01b':
       return {
@@ -91,7 +94,7 @@ export function buildQuestion(step: StepId, s: AsmtState, t: TFunction, topics: 
       return {
         kind: 'single',
         layout: 'pills',
-        bubbles: [`${t('assessment.emotion.q')}<br>${sub(t('assessment.emotion.sub'))}`],
+        bubbles: [`${hero('💭')}${t('assessment.emotion.q')}<br>${sub(t('assessment.emotion.sub'))}`],
         options: EMOTIONS.map((e) => ({ value: e.id, label: t(`assessment.emotion.items.${e.id}`), icon: e.em })),
       }
     case 'A03':
@@ -99,7 +102,7 @@ export function buildQuestion(step: StepId, s: AsmtState, t: TFunction, topics: 
       const k = key === 'A03' ? 'sleep' : 'appetite'
       return {
         kind: 'single',
-        bubbles: [`${t(`assessment.${k}.q`)}<br>${sub(t(`assessment.${k}.sub`))}`],
+        bubbles: [`${hero(key === 'A03' ? '🌙' : '🍽️')}${t(`assessment.${k}.q`)}<br>${sub(t(`assessment.${k}.sub`))}`],
         options: list(`assessment.${k}.o`, 5),
       }
     }

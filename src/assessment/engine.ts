@@ -16,6 +16,7 @@ export const ASMT_CFG = {
   totalMax: 24, // body 0-4 + sleep 0-4 + appetite 0-4 + PHQ-2 0-6 + GAD-2 0-6
   bandPct: [30, 55, 78], // ILLUSTRATIVE cut-points, to be set by the clinical team
   bandNames: ['Green', 'Amber', 'Orange', 'Red Non-Emergency'] as const,
+  bandColors: ['#1D9E75', '#EF9F27', '#D85A30', '#E24B4A'],
   phq2Cut: 3,
   gad2Cut: 3,
   // PLACEHOLDER: adult WHO ASSIST weights and cut-offs. Replace with ASSIST-Y V1.0
@@ -513,6 +514,8 @@ function deriveCsFlags(s: AsmtState) {
 const scaleSum = (a: [Scored, Scored]) => (isNum(a[0]) ? a[0] : 0) + (isNum(a[1]) ? a[1] : 0)
 
 export interface AsmtResult {
+  /** The five scored parts: body 0-4, sleep 0-4, appetite 0-4, PHQ-2 0-6, GAD-2 0-6. */
+  parts: { body: number; sleep: number; appetite: number; mood: number; worry: number }
   total: number
   pct: number
   /** Index into ASMT_CFG.bandNames. Never shown to the child. */
@@ -575,7 +578,10 @@ export function finish(prev: AsmtState, basketIssueIds: string[]): { state: Asmt
   }
   return {
     state: s,
-    result: { total, pct, band, baseBand: base, why, phq2: ph, gad2: gd, csRisk: cs, csEscalated: csEsc, suMax, incomplete },
+    result: {
+      parts: { body: bs, sleep: s.sleep ?? 0, appetite: s.appetite ?? 0, mood: ph, worry: gd },
+      total,
+      pct, band, baseBand: base, why, phq2: ph, gad2: gd, csRisk: cs, csEscalated: csEsc, suMax, incomplete },
     red,
   }
 }

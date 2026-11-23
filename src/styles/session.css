@@ -1064,3 +1064,131 @@
   font-weight: 900;
   color: var(--red);
 }
+
+/* prototype visuals: hero emoji, body figure, staff score card */
+.asmt-hero {
+  display: block;
+  font-size: 3.8rem;
+  text-align: center;
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+  animation: float 3s ease-in-out infinite;
+}
+.asmt-body-layout {
+  display: flex;
+  gap: 1.2rem;
+  align-items: flex-start;
+}
+.asmt-body {
+  flex-shrink: 0;
+  margin-top: 0.4rem;
+}
+.asmt-body ellipse,
+.asmt-body rect {
+  transition: fill 0.2s;
+}
+.asmt-body-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.asmt-score {
+  background: #fff;
+  border: 1.5px dashed #d9cef7;
+  border-radius: 1.6rem;
+  padding: 1.4rem;
+  margin: 0.6rem 0 0.6rem 3.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  font-size: 1.15rem;
+  color: #4a4565;
+}
+.asmt-score-note {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #a9a2c6;
+}
+.asmt-score-total {
+  font-size: 3.6rem;
+  font-weight: 900;
+  color: #25233a;
+  line-height: 1;
+  text-align: center;
+}
+.asmt-score-sub {
+  text-align: center;
+  font-weight: 700;
+  color: #8f86bc;
+}
+.asmt-score-bar {
+  display: flex;
+  height: 1rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  gap: 2px;
+}
+.asmt-score-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #a9a2c6;
+}
+.asmt-band {
+  border-radius: 1.2rem;
+  padding: 1rem;
+  text-align: center;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.asmt-band span {
+  font-size: 1rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.asmt-band b {
+  font-size: 1.7rem;
+}
+.asmt-score-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  line-height: 1.45;
+}
+.asmt-score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.05rem;
+}
+.asmt-score-table th,
+.asmt-score-table td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #eee9fa;
+}
+.asmt-score-table tr.on {
+  background: #f3effd;
+  font-weight: 800;
+}
+.asmt-flag {
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.6rem;
+  background: #eee9fa;
+  color: #6c6590;
+}
+.asmt-flag-urgent {
+  background: #fdebd3;
+  color: #9a5a00;
+}
+.asmt-flag-realtime {
+  background: #fbdada;
+  color: #a32d2d;
+}

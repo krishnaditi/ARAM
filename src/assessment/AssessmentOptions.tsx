@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SUBSTANCES, type Answer } from './engine'
 import type { Option, Question } from './questions'
+import BodyFigure from './BodyFigure'
 
 /**
  * The tap options under ARAM's latest question. `onAnswer` gets the answer plus the text
@@ -111,23 +112,32 @@ function MultiSelect({
       question.options.filter((o) => picked.includes(String(o.value))).map((o) => o.label).join(', '),
     )
 
+  const options = question.options.map((o) => {
+    const on = picked.includes(String(o.value))
+    return (
+      <button
+        type="button"
+        key={String(o.value)}
+        className={`opt opt-issue${on ? ' sel' : ''}${o.quiet ? ' opt-other' : ''}`}
+        aria-pressed={on}
+        onClick={() => toggle(String(o.value))}
+      >
+        <span className={`opt-cb${on ? ' on' : ''}`}>{on ? '✓' : ''}</span>
+        <span className="opt-tx">{o.label}</span>
+      </button>
+    )
+  })
+
   return (
     <div className="rail">
-      {question.options.map((o) => {
-        const on = picked.includes(String(o.value))
-        return (
-          <button
-            type="button"
-            key={String(o.value)}
-            className={`opt opt-issue${on ? ' sel' : ''}${o.quiet ? ' opt-other' : ''}`}
-            aria-pressed={on}
-            onClick={() => toggle(String(o.value))}
-          >
-            <span className={`opt-cb${on ? ' on' : ''}`}>{on ? '✓' : ''}</span>
-            <span className="opt-tx">{o.label}</span>
-          </button>
-        )
-      })}
+      {question.figure === 'body' ? (
+        <div className="asmt-body-layout">
+          <BodyFigure parts={picked} />
+          <div className="asmt-body-list">{options}</div>
+        </div>
+      ) : (
+        options
+      )}
       <button type="button" className={`bub-go${picked.length ? '' : ' wait'}`} disabled={!picked.length} onClick={done}>
         {t('assessment.ui.done')}
       </button>
